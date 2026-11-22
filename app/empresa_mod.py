@@ -9,6 +9,11 @@ Yahoo Finance, pide a Yahoo:
   - los splits (cuando una acción se divide, por ejemplo 2 por 1),
   - el precio del último año, para saber el máximo y el mínimo de 52 semanas.
 
+Nivel 2 («la empresa en cifras»), también de Yahoo y solo con el ticker: ratios de
+valoración (PER, P/VC...), sector e industria y las cuentas de los últimos años, de las
+que salen ROE, márgenes, deuda, crecimiento y payout. Va en otra ruta
+(/api/empresa-mod/cifras) para que los dividendos no tengan que esperarla.
+
 Con eso calcula la rentabilidad por dividendo, cómo ha crecido el dividendo, cuándo
 toca el próximo, cuánto te correspondía en cada pago según los títulos que tenías y
 si lo tienes anotado en tus movimientos.
@@ -283,10 +288,165 @@ def metricas(guardado, movs, hoy=None):
     }
 
 
+# ---------------------------------------------------------------- nivel 2: la empresa en cifras (Yahoo)
+# Morningstar rechaza estas consultas (responde 401), así que las cifras salen de Yahoo:
+# ratios de valoración del día y las cuentas anuales de los últimos años. Comprobado con
+# acciones de EE. UU., España y Alemania (también las líneas .F y .DE).
+
+FUND = "https://query2.finance.yahoo.com/ws/fundamentals-timeseries/v1/finance/timeseries/"
+BUSCA_YAHOO = "https://query2.finance.yahoo.com/v1/finance/search?"
+CADUCA_FUND_DIAS = 3
+RATIOS = ["trailingPeRatio", "trailingForwardPeRatio", "trailingPbRatio", "trailingPsRatio", "trailingPegRatio",
+          "trailingMarketCap", "trailingEnterprisesValueEBITDARatio"]
+ANUALES = ["TotalRevenue", "GrossProfit", "OperatingIncome", "NetIncome", "DilutedEPS", "EBITDA", "FreeCashFlow",
+           "StockholdersEquity", "TotalAssets", "TotalDebt", "NetDebt", "CurrentAssets", "CurrentLiabilities",
+           "CashDividendsPaid", "OrdinarySharesNumber"]
+SECTORES_YAHOO = {"technology": "Tecnología", "healthcare": "Salud", "financial services": "Financiero",
+                  "consumer cyclical": "Consumo discrecional", "consumer defensive": "Consumo básico",
+                  "energy": "Energía", "industrials": "Industrial", "basic materials": "Materiales",
+                  "real estate": "Inmobiliario", "utilities": "Utilities", "communication services": "Comunicaciones"}
+
+
+def _ultimo(serie):
+    """Último valor de una serie de Yahoo: (fecha, valor, moneda) o None."""
+    vals = [x for x in serie or [] if x and (x.get("reportedValue") or {}).get("raw") is not None]
+    if not vals:
+        return None
+    x = vals[-1]
+    return x.get("asOfDate"), float(x["reportedValue"]["raw"]), x.get("currencyCode")
+
+
+def lee_fundamentales(bruto):
+    """{tipo: [(fecha, valor, moneda), ...]} de la respuesta de Yahoo."""
+    out = {}
+    for r in (bruto.get("timeseries") or {}).get("result") or []:
+        tipo = ((r.get("meta") or {}).get("type") or [None])[0]
+        if not tipo:
+            continue
+        out[tipo] = [(x.get("asOfDate"), float(x["reportedValue"]["raw"]), x.get("currencyCode"))
+                     for x in r.get(tipo) or [] if x and (x.get("reportedValue") or {}).get("raw") is not None]
+    return out
+
+
+def descarga_fund(simbolo):
+    """Ratios y cuentas anuales de Yahoo, y el sector e industria de su buscador."""
+    ahora = int(time.time())
+    tipos = RATIOS + ["annual" + t for t in ANUALES]
+    url = (FUND + urllib.parse.quote(simbolo) + "?" + urllib.parse.urlencode(
+        {"type": ",".join(tipos), "period1": ahora - 7 * 365 * 86400, "period2": ahora}))
+    datos = {"series": lee_fundamentales(_get(url))}
+    try:
+        b = _get(BUSCA_YAHOO + urllib.parse.urlencode({"q": simbolo, "quotesCount": 3, "newsCount": 0}))
+        q = next((x for x in b.get("quotes") or [] if x.get("symbol") == simbolo), None)
+        if q:
+            datos["sector"] = q.get("sectorDisp") or q.get("sector")
+            datos["industria"] = q.get("industryDisp") or q.get("industry")
+    except Exception:
+        pass
+    return datos
+
+
+def obten_fund(simbolo, cache, red_ok=True):
+    os.makedirs(cache, exist_ok=True)
+    ruta = os.path.join(cache, "EMPRESA_FUND_" + re.sub(r"[^A-Za-z0-9]", "_", simbolo) + ".json")
+    guardado = None
+    try:
+        with open(ruta, encoding="utf-8") as f:
+            guardado = json.load(f)
+        edad = dt.datetime.now() - dt.datetime.fromisoformat(guardado["consulta"])
+        lleno = bool((guardado.get("datos") or {}).get("series"))
+        # Si Yahoo no dio nada, se reintenta antes: puede haber sido un fallo pasajero.
+        if edad < (dt.timedelta(days=CADUCA_FUND_DIAS) if lleno else dt.timedelta(hours=6)) or not red_ok:
+            return guardado
+    except (OSError, ValueError, KeyError, TypeError):
+        pass
+    if not red_ok:
+        return guardado
+    try:
+        datos = descarga_fund(simbolo)
+    except Exception:
+        if guardado:
+            guardado["sinConexion"] = True
+        return guardado
+    nuevo = {"consulta": dt.datetime.now().replace(microsecond=0).isoformat(), "datos": datos}
+    try:
+        with open(ruta, "w", encoding="utf-8") as f:
+            json.dump(nuevo, f, ensure_ascii=False)
+    except OSError:
+        pass
+    return nuevo
+
+
+def cifras(guardado):
+    """Lo que pinta «La empresa en cifras». Los cocientes salen de la misma cuenta anual
+    (misma moneda), así que valen aunque la empresa presente en coronas o en dólares."""
+    d = (guardado or {}).get("datos") or {}
+    se = d.get("series") or {}
+    if not se:
+        return None
+    u = {k: _ultimo([{"asOfDate": f, "reportedValue": {"raw": v}, "currencyCode": m} for f, v, m in se.get(k) or []])
+         for k in se}
+    val = lambda k: u[k][1] if u.get(k) else None   # noqa: E731
+    div = lambda a, b: a / b if a is not None and b not in (None, 0) else None   # noqa: E731
+
+    ventas, neto, fondos = val("annualTotalRevenue"), val("annualNetIncome"), val("annualStockholdersEquity")
+    out = {
+        "per": val("trailingPeRatio"), "perFuturo": val("trailingForwardPeRatio"), "peg": val("trailingPegRatio"),
+        "pvc": val("trailingPbRatio"), "pventas": val("trailingPsRatio"), "evEbitda": val("trailingEnterprisesValueEBITDARatio"),
+        "capitalizacion": val("trailingMarketCap"),
+        "monedaCap": u["trailingMarketCap"][2] if u.get("trailingMarketCap") else None,
+        "roe": div(neto, fondos) if fondos and fondos > 0 else None,
+        "roa": div(neto, val("annualTotalAssets")),
+        "margenBruto": div(val("annualGrossProfit"), ventas),
+        "margenOperativo": div(val("annualOperatingIncome"), ventas),
+        "margenNeto": div(neto, ventas),
+        "deudaPatrimonio": div(val("annualTotalDebt"), fondos) if fondos and fondos > 0 else None,
+        "deudaNetaEbitda": div(val("annualNetDebt"), val("annualEBITDA")) if (val("annualEBITDA") or 0) > 0 else None,
+        "liquidez": div(val("annualCurrentAssets"), val("annualCurrentLiabilities")),
+        "payout": div(-(val("annualCashDividendsPaid") or 0), neto) if neto and neto > 0 and val("annualCashDividendsPaid") else None,
+        "payoutCaja": (div(-(val("annualCashDividendsPaid") or 0), val("annualFreeCashFlow"))
+                       if (val("annualFreeCashFlow") or 0) > 0 and val("annualCashDividendsPaid") else None),
+        "ejercicio": (u.get("annualTotalRevenue") or u.get("annualNetIncome") or (None,))[0],
+        "monedaCuentas": (u.get("annualTotalRevenue") or (None, None, None))[2],
+    }
+    if out["per"] is not None and out["per"] <= 0:
+        out["per"] = None   # con pérdidas el PER no tiene sentido
+
+    # Crecimiento al año entre el primer y el último ejercicio que da Yahoo (hasta 4 años).
+    def crece(k):
+        xs = [(f, v) for f, v, _ in se.get(k) or [] if v is not None]
+        if len(xs) < 2 or xs[0][1] <= 0 or xs[-1][1] <= 0:
+            return None, None
+        anos = int(xs[-1][0][:4]) - int(xs[0][0][:4])
+        return ((xs[-1][1] / xs[0][1]) ** (1 / anos) - 1, anos) if anos > 0 else (None, None)
+
+    out["creceVentas"], out["anosCrece"] = crece("annualTotalRevenue")
+    out["creceBpa"], _ = crece("annualDilutedEPS")
+    acc = [(f, v) for f, v, _ in se.get("annualOrdinarySharesNumber") or []]
+    if len(acc) >= 2 and acc[0][1] > 0:
+        out["cambioAcciones"] = acc[-1][1] / acc[0][1] - 1   # negativo: ha recomprado acciones
+
+    # Historia anual para el gráfico (en la moneda en que presenta las cuentas).
+    def por_ano(k, signo=1):
+        return {f[:4]: signo * v for f, v, _ in se.get(k) or []}
+    v_, n_, c_ = por_ano("annualTotalRevenue"), por_ano("annualNetIncome"), por_ano("annualFreeCashFlow")
+    out["historia"] = [[a, v_.get(a), n_.get(a), c_.get(a)] for a in sorted(set(v_) | set(n_) | set(c_))]
+
+    sector = (d.get("sector") or "").strip()
+    out["sector"] = SECTORES_YAHOO.get(sector.lower(), sector) or None
+    out["industria"] = (d.get("industria") or "").replace("\u2014", " - ") or None
+    out = {k: (round(v, 6) if isinstance(v, float) else v) for k, v in out.items() if v is not None}
+    if len(out) <= 2:
+        return None
+    out["consulta"] = guardado.get("consulta")
+    out["sinConexion"] = bool(guardado.get("sinConexion"))
+    return out
+
+
 # ---------------------------------------------------------------- la ruta del servidor
 
 def calcula(cfg, cache, red_ok=True, hoy=None):
-    """{id del producto: métricas} para las acciones y ETF de la cartera."""
+    """{id del producto: métricas de dividendos y precio} para las acciones y ETF de la cartera."""
     prods = [p for p in cfg.get("productos", []) if aplica(p)]
     simbolos = sorted({p["codigo"] for p in prods})
     with ThreadPoolExecutor(max_workers=6) as ex:
@@ -304,13 +464,38 @@ def calcula(cfg, cache, red_ok=True, hoy=None):
     return salida
 
 
+def calcula_cifras(cfg, cache, red_ok=True):
+    """{id del producto: cifras de la empresa} para las acciones (los ETF no tienen cuentas)."""
+    prods = [p for p in cfg.get("productos", []) if aplica(p) and p.get("tipo") == "accion"]
+    simbolos = sorted({p["codigo"] for p in prods})
+    with ThreadPoolExecutor(max_workers=6) as ex:
+        brutos = dict(zip(simbolos, ex.map(lambda s: obten_fund(s, cache, red_ok), simbolos)))
+    salida = {}
+    for p in prods:
+        try:
+            c = cifras(brutos.get(p["codigo"]))
+        except Exception:
+            c = None
+        if c:
+            salida[p["id"]] = c
+    return salida
+
+
 def registra(app, cartera, carpeta_cache):
-    """Añade la ruta /api/empresa-mod al servidor. cartera() y carpeta_cache() son del servidor."""
+    """Añade las rutas al servidor. cartera() y carpeta_cache() son del servidor.
+    Van por separado para que lo de los dividendos nunca espere a las cifras."""
     from flask import jsonify
 
     @app.get("/api/empresa-mod")
     def api_empresa_mod():
         try:
             return jsonify(ok=True, productos=calcula(cartera(), carpeta_cache()))
+        except Exception as e:
+            return jsonify(ok=False, productos={}, error=str(e)), 200
+
+    @app.get("/api/empresa-mod/cifras")
+    def api_empresa_mod_cifras():
+        try:
+            return jsonify(ok=True, productos=calcula_cifras(cartera(), carpeta_cache()))
         except Exception as e:
             return jsonify(ok=False, productos={}, error=str(e)), 200

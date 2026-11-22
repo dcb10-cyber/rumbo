@@ -39,9 +39,26 @@ para ver qué era mío.
   - La web exportada («Compartir») no lo incluye: allí no hay servidor.
   - Si al traer una actualización del autor algo choca, basta con volver a poner las 5 líneas `[mod]`.
 
+- **22/11/2026 · Nivel 2: la empresa en cifras (Yahoo)**.
+  - Todo en mis archivos: `app/empresa_mod.py`, `app/web/empresa_mod.js` y `tests/test_empresa_mod.py`.
+    No se ha tocado ningún archivo del autor (usa las mismas 5 líneas `[mod]` del nivel 1).
+  - Primero se intentó con Morningstar, pero rechaza estas consultas (responde 401 «no
+    autorizado»), así que se quitó. Ojo: puede que por eso tampoco funcione el «Qué hay dentro»
+    del autor para acciones; no lo he tocado.
+  - Fuente: Yahoo, solo con el ticker (`query2.finance.yahoo.com`, que ya estaba permitido en
+    `red.py`): ratios del día (PER, PER estimado, PEG, P/VC, P/ventas, EV/EBITDA, capitalización),
+    sector e industria, y las cuentas anuales de los últimos 4 años. De ellas se calculan ROE,
+    ROA, márgenes, deuda/patrimonio, deuda neta/EBITDA, liquidez, crecimiento de ventas y BPA,
+    recompras y payout. Comprobado con acciones de EE. UU., España y Alemania (.F y .DE).
+  - Ruta propia: `/api/empresa-mod/cifras`, aparte de la de dividendos para que esta no espere.
+  - Caché: `mis_datos/cache/EMPRESA_FUND_*.json`, cada 3 días (si viene vacío, reintenta a las 6 h).
+    Los `EMPRESA_MS_*.json` que quedaron del intento con Morningstar ya no se usan: se pueden borrar.
+  - Dónde se ve: pestaña Productos → «La empresa en cifras» (con «¿Qué significa cada dato?» y un
+    gráfico de beneficio y caja libre por año), y Rendimiento → «Tus acciones en cifras», tabla
+    que se ordena pulsando las columnas, con la media ponderada por lo que tienes. Los ETF no
+    tienen cuentas, así que no sale para ellos.
+
 ## Pendiente (ideas)
-- Nivel 2 de datos de empresas: industria, capitalización, PER, P/VC, rentabilidad por dividendo
-  según Morningstar (ampliando la búsqueda de `exposicion.py`, hay que probar los nombres de campo).
 - Nivel 3: ficha completa de Yahoo (márgenes, deuda, analistas, calendario de resultados). Necesita
   cookie + «crumb» y añadir un sitio a `red.py`: más frágil.
 - Más cambios visuales: colores y textos.
@@ -49,3 +66,6 @@ para ver qué era mío.
 
 ## Notas
 - mis_datos/ no se toca ni se sube a GitHub.
+- Después de cambiar archivos de la app (o de traer una actualización del autor), cerrar la
+  ventana negra de Rumbo y volver a abrir Iniciar.bat. Si queda un Rumbo viejo abierto, el
+  panel sale vacío (la huella de seguridad de index.html no coincide).

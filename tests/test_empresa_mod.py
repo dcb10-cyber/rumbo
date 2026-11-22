@@ -115,11 +115,72 @@ class Calculos(unittest.TestCase):
         self.assertAlmostEqual(m["dps12"], 4 * 0.52)
 
 
+def serie_yahoo(tipo, pares, moneda="USD"):
+    return {"meta": {"symbol": ["TEST"], "type": [tipo]}, "timestamp": [1] * len(pares),
+            tipo: [{"asOfDate": f, "periodType": "12M", "currencyCode": moneda, "reportedValue": {"raw": v}}
+                   for f, v in pares]}
+
+
+ANOS = ["2022-12-31", "2023-12-31", "2024-12-31", "2025-12-31"]
+FUND_RESPUESTA = {"timeseries": {"result": [
+    serie_yahoo("trailingPeRatio", [("2026-11-20", 17.7)], None),
+    serie_yahoo("trailingPbRatio", [("2026-11-20", 8.6)], None),
+    serie_yahoo("trailingMarketCap", [("2026-11-20", 1.9e11)]),
+    serie_yahoo("annualTotalRevenue", list(zip(ANOS, [80e9, 85e9, 90e9, 93.925e9]))),
+    serie_yahoo("annualNetIncome", list(zip(ANOS, [8.9e9, 9e9, 9.5e9, 8.24e9]))),
+    serie_yahoo("annualStockholdersEquity", list(zip(ANOS, [17e9, 18e9, 18e9, 20.6e9]))),
+    serie_yahoo("annualTotalDebt", list(zip(ANOS, [40e9, 44e9, 45e9, 49.44e9]))),
+    serie_yahoo("annualDilutedEPS", list(zip(ANOS, [5.0, 5.5, 6.0, 6.0]))),
+    serie_yahoo("annualCashDividendsPaid", list(zip(ANOS, [-6e9, -6.5e9, -7e9, -7.6e9]))),
+    serie_yahoo("annualFreeCashFlow", list(zip(ANOS, [6e9, 7e9, 7e9, 7.6e9]))),
+    serie_yahoo("annualOrdinarySharesNumber", list(zip(ANOS, [1.4e9, 1.39e9, 1.38e9, 1.372e9]))),
+]}}
+BUSCA_RESPUESTA = {"quotes": [{"symbol": "TEST", "sector": "Consumer Defensive",
+                               "industry": "Beverages\u2014Non-Alcoholic", "quoteType": "EQUITY"}]}
+
+
+class Cifras(unittest.TestCase):
+    def guardado(self):
+        d = {"series": empresa_mod.lee_fundamentales(FUND_RESPUESTA), "sector": "Consumer Defensive",
+             "industria": "Beverages\u2014Non-Alcoholic"}
+        return {"consulta": "2026-11-22T10:00:00", "datos": d}
+
+    def test_ratios_y_cuentas(self):
+        c = empresa_mod.cifras(self.guardado())
+        self.assertEqual(c["per"], 17.7)
+        self.assertEqual(c["pvc"], 8.6)
+        self.assertEqual(c["capitalizacion"], 1.9e11)
+        self.assertAlmostEqual(c["roe"], 8.24 / 20.6, places=5)
+        self.assertAlmostEqual(c["margenNeto"], 8.24 / 93.925, places=5)
+        self.assertAlmostEqual(c["deudaPatrimonio"], 49.44 / 20.6, places=5)
+        self.assertAlmostEqual(c["payout"], 7.6 / 8.24, places=5)
+        self.assertAlmostEqual(c["payoutCaja"], 1.0, places=5)
+        self.assertAlmostEqual(c["creceVentas"], (93.925 / 80) ** (1 / 3) - 1, places=5)
+        self.assertEqual(c["anosCrece"], 3)
+        self.assertAlmostEqual(c["cambioAcciones"], 1.372 / 1.4 - 1, places=5)
+        self.assertEqual(c["sector"], "Consumo básico")
+        self.assertEqual(c["industria"], "Beverages - Non-Alcoholic")
+        self.assertEqual(c["historia"][-1][0], "2025")
+        self.assertEqual(c["ejercicio"], "2025-12-31")
+
+    def test_con_perdidas_no_hay_per_ni_payout(self):
+        g = self.guardado()
+        g["datos"]["series"]["trailingPeRatio"] = [("2026-11-20", -3.0, None)]
+        g["datos"]["series"]["annualNetIncome"] = [("2025-12-31", -1e9, "USD")]
+        c = empresa_mod.cifras(g)
+        self.assertNotIn("per", c)
+        self.assertNotIn("payout", c)
+
+    def test_sin_datos(self):
+        self.assertIsNone(empresa_mod.cifras({"consulta": "x", "datos": {"series": {}}}))
+        self.assertIsNone(empresa_mod.cifras(None))
+
+
 class Ruta(ConCarpeta):
     def setUp(self):
         super().setUp()
         cfg = cartera([{"id": "a", "nombre": "Mi acción", "tipo": "accion", "fuente": "yahoo", "codigo": "TEST",
-                        "moneda": "USD", "slot": 1},
+                        "identificador": "US1912161007", "moneda": "USD", "slot": 1},
                        {"id": "f", "nombre": "Mi fondo", "tipo": "fondo", "fuente": "morningstar",
                         "codigo": "0P0001CLDK", "slot": 2}], MOVS)
         with open(os.path.join(self.carpeta, "cartera.json"), "w", encoding="utf-8") as f:
@@ -145,6 +206,10 @@ class Ruta(ConCarpeta):
             urls.append(url)
             partes = urllib.parse.urlsplit(url)
             self.assertIn(partes.hostname, red.PERMITIDOS)
+            if "fundamentals-timeseries" in url:
+                return Resp(FUND_RESPUESTA)
+            if "/v1/finance/search" in url:
+                return Resp(BUSCA_RESPUESTA)
             return Resp(yahoo_anual() if "range=1y" in url else yahoo_largo())
 
         with mock.patch.object(servidor, "DATOS", self.carpeta), mock.patch.object(red, "abrir", falso):
@@ -152,18 +217,26 @@ class Ruta(ConCarpeta):
             j = web.get("/api/empresa-mod").get_json()
             self.assertTrue(j["ok"])
             self.assertEqual(list(j["productos"]), ["a"])       # el fondo no
-            self.assertEqual(len(urls), 2)
+            self.assertEqual(len(urls), 2)                       # los dividendos no esperan a las cifras
+            c = web.get("/api/empresa-mod/cifras").get_json()
+            self.assertEqual(list(c["productos"]), ["a"])
+            self.assertEqual(c["productos"]["a"]["per"], 17.7)
+            self.assertEqual(len(urls), 4)
             for u in urls:
                 self.assertNotIn("500", u)
                 self.assertNotIn("Mi", u)
             web.get("/api/empresa-mod")                          # la segunda vez, de la cache
-            self.assertEqual(len(urls), 2)
+            web.get("/api/empresa-mod/cifras")
+            self.assertEqual(len(urls), 4)
+            self.assertTrue(os.path.exists(os.path.join(self.carpeta, "cache", "EMPRESA_FUND_TEST.json")))
             self.assertTrue(os.path.exists(os.path.join(self.carpeta, "cache", "EMPRESA_TEST.json")))
 
     def test_sin_internet_no_falla(self):
         with mock.patch.object(servidor, "DATOS", self.carpeta):
             j = servidor.app.test_client().get("/api/empresa-mod").get_json()
+            c = servidor.app.test_client().get("/api/empresa-mod/cifras").get_json()
         self.assertEqual(j, {"ok": True, "productos": {}})
+        self.assertEqual(c, {"ok": True, "productos": {}})
 
 
 if __name__ == "__main__":
