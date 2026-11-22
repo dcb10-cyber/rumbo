@@ -280,7 +280,7 @@
   }
 
   function siguienteColor() {
-    const usos = Array(13).fill(0);
+    const usos = Array(14).fill(0); // [mod] 14 para que quepa el color 13 (negro); el reparto automático sigue usando 1-12
     E.cfg.productos.forEach(p => { usos[p.slot || 1]++; });
     let mejor = 1;
     for (let i = 1; i <= 12; i++) if (usos[i] < usos[mejor]) mejor = i;
@@ -299,7 +299,7 @@
     const nuevo = !p;
     p = p || { tipo: "fondo", fuente: "morningstar", moneda: "EUR", largoPlazo: true, slot: siguienteColor() };
     const clases = [...new Set(E.cfg.productos.map(x => x.clase).filter(Boolean))];
-    const colores = Array.from({ length: 12 }, (_, i) =>
+    const colores = Array.from({ length: 13 }, (_, i) => // [mod] 13: añadido el negro
       `<label class="color" style="--c:var(--s${i + 1})" title="Color ${i + 1}"><input type="radio" name="slot" value="${i + 1}"><i></i></label>`).join("");
     const f = abreModal(nuevo ? "Añadir producto" : "Editar " + esc(nombre(p)), `
       <div class="buscador">

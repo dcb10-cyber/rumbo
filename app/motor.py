@@ -48,6 +48,7 @@ PALETA = {
     10: ("#9a6a3a", "#c08a55"),  # marrón
     11: ("#5d6b8a", "#93a1c2"),  # gris azulado
     12: ("#7c9a00", "#9cc21a"),  # oliva
+    13: ("#1a1a1a", "#e6e6e6"),  # [mod] negro (en modo oscuro, casi blanco para que se vea)
 }
 
 AVISOS = []
