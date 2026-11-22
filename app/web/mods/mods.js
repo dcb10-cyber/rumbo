@@ -186,6 +186,14 @@
     return cobros.promesa;
   };
 
+  // La fecha de hoy (AAAA-MM-DD, hora de tu ordenador), o la de los datos si fuera posterior.
+  function hoy() {
+    const d = new Date();
+    d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+    const h = d.toISOString().slice(0, 10), ext = (window.DATOS && window.DATOS.fechaExtracto) || "";
+    return ext > h ? ext : h;
+  }
+
   /* ---------------------------------------------- reparto de las llamadas de app.js */
   const apartados = [];
   let fichaActual = null;
@@ -225,7 +233,7 @@
 
   window.Mods = {
     registra, ficha, resumen, mes, formMovimiento,
-    util: { $, escH, visible, seccion, oculta, fuente, tablaOrdenable, pestana, cobros, fichaActual: () => fichaActual },
+    util: { $, escH, visible, seccion, oculta, fuente, tablaOrdenable, pestana, cobros, hoy, fichaActual: () => fichaActual },
   };
   const pend = window.MODS_FICHA;
   if (pend) fichaActual = pend[0] && pend[0].id;

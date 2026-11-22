@@ -139,7 +139,8 @@
   }
 
   function pintaTodo(panel) {
-    const hoy = D.fechaExtracto;
+    // Hoy de verdad (no la fecha de los últimos precios): un cobro de hoy no es «futuro».
+    const hoy = M.util.hoy();
     const info = fuente.datos.productos;
     const todos = fuente.datos.cobros.map(c => {
       const i = info[c.producto] || {};

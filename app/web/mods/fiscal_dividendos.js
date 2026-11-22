@@ -109,11 +109,15 @@
     if ((pais === "IE" || pais === "LU") && p && (p.tipo === "etf" || p.tipo === "fondo")) return 0;
     return (PAISES[pais] || PAISES.XX)[1];
   }
+  // Clave con la que se recuerda si ese banco o bróker retiene: «int:» delante para los intereses.
+  const claveBroker = p => {
+    const ent = String((p && p.entidad) || "").trim().toLowerCase();
+    return ent && (p.tipo === "efectivo" || p.tipo === "p2p" ? "int:" : "") + ent;
+  };
   function retieneEspana(p) {
-    const ent = String((p && p.entidad) || "").trim();
-    const elegido = lsLee()[ent.toLowerCase()];
+    const elegido = lsLee()[claveBroker(p)];
     if (elegido != null) return elegido;
-    return RETIENEN_ES.test(ent);
+    return RETIENEN_ES.test(String((p && p.entidad) || ""));
   }
 
   /**
@@ -193,19 +197,21 @@
     caja.className = "fmod";
     caja.innerHTML = `
       <div class="fmodTit"><span>Retenciones e impuestos</span>
-        <label><input type="checkbox" class="fmodUsar"> Anotar el bruto y las retenciones</label></div>
+        <label><input type="checkbox" class="fmodUsar"> <span class="fmodTxtUsar">Anotar el bruto y las retenciones</span></label></div>
       <div class="fmodCuerpo">
         <div class="rejilla">
-          <label class="campo"><span class="et">País del que viene</span><select name="fis_pais">${opciones}</select></label>
-          <label class="campo"><span class="et">Dividendo bruto <em>antes de retenciones</em></span>
+          <label class="campo fmodSoloDiv"><span class="et">País del que viene</span><select name="fis_pais">${opciones}</select></label>
+          <label class="campo"><span class="et"><span class="fmodTxtBruto">Dividendo bruto</span> <em class="fmodTxtAntes">antes de retenciones</em></span>
             <div class="conSufijo"><input name="fis_bruto" inputmode="decimal" placeholder="0,00"><span class="fmodSim">€</span></div></label>
-          <label class="campo"><span class="et">Retenido en origen <em class="fmodPctO"></em></span>
+          <label class="campo fmodSoloDiv"><span class="et">Retenido en origen <em class="fmodPctO"></em></span>
             <div class="conSufijo"><input name="fis_origen" inputmode="decimal" placeholder="0,00"><span class="fmodSim">€</span></div></label>
-          <label class="campo"><span class="et">Retenido en España <em class="fmodPctE"></em></span>
+          <label class="campo fmodSoloInt"><span class="et">¿Te retienen?</span>
+            <select class="fmodRetieneInt"><option value="1">Sí, el 19 %</option><option value="0">No, me los pagan sin retención</option></select></label>
+          <label class="campo"><span class="et"><span class="fmodTxtEsp">Retenido en España</span> <em class="fmodPctE"></em></span>
             <div class="conSufijo"><input name="fis_espana" inputmode="decimal" placeholder="0,00"><span class="fmodSim">€</span></div></label>
-          <label class="campo"><span class="et">Máximo del convenio <em>vacío = sin convenio</em></span>
+          <label class="campo fmodSoloDiv"><span class="et">Máximo del convenio <em>vacío = sin convenio</em></span>
             <div class="conSufijo"><input name="fis_convenio" inputmode="decimal" placeholder="sin convenio"><span>%</span></div></label>
-          <label class="campo"><span class="et">¿Tu bróker retiene en España?</span>
+          <label class="campo fmodSoloDiv"><span class="et">¿Tu bróker retiene en España?</span>
             <select class="fmodRetiene"><option value="1">Sí, el 19 % de lo que llega</option><option value="0">No (IBKR, Degiro…)</option></select></label>
         </div>
         <input type="hidden" name="fis_neto">
@@ -217,8 +223,12 @@
     (nota || f.querySelector(".rejilla")).insertAdjacentElement(nota ? "afterend" : "beforeend", caja);
 
     const E_ = n => f.elements[n];
+    const producto = () => prodDe(E_("producto").value);
     const usar = caja.querySelector(".fmodUsar");
-    const selRet = caja.querySelector(".fmodRetiene");
+    const selRetDiv = caja.querySelector(".fmodRetiene"), selRetInt = caja.querySelector(".fmodRetieneInt");
+    // Cuentas remuneradas y P2P: intereses (sin país ni convenio); el resto, dividendos y cupones.
+    const esInteres = () => { const p = producto(); return !!p && (p.tipo === "efectivo" || p.tipo === "p2p"); };
+    const selRetActivo = () => (esInteres() ? selRetInt : selRetDiv);
     // Lo que el usuario ha escrito a mano no se pisa con lo automático.
     // Las retenciones automáticas no pisan lo que escribas a mano en ellas.
     // El importe se recalcula (bruto − retenciones) cada vez que cambias algo de este bloque;
@@ -227,7 +237,6 @@
     let escribiendoYo = false;
     ["origen", "espana", "convenio"].forEach(k => E_("fis_" + k).addEventListener("input", () => { tocado[k] = true; }));
 
-    const producto = () => prodDe(E_("producto").value);
     const esDividendo = () => {
       const t = f.elements.tipo && f.elements.tipo.value;
       const p = producto();
@@ -244,7 +253,9 @@
         E_("fis_convenio").value = c == null || isNaN(c) ? "" : dec(c * 100, 3).replace(/,?0+$/, "");
         tocado.convenio = false;
       }
-      selRet.value = retieneEspana(p) ? "1" : "0";
+      // ¿Te retienen? Como en el último cobro de ese producto; si no hay, lo que elegiste para ese banco o bróker.
+      const ret = ult ? ult.fiscal.espana > 0 : retieneEspana(p);
+      selRetDiv.value = selRetInt.value = ret ? "1" : "0";
       if (cambioProducto) { tocado.origen = false; tocado.espana = false; }
     }
 
@@ -257,6 +268,15 @@
       if (!on || !usar.checked) return;
 
       const p = producto();
+      // Intereses: lo de los dividendos (país, origen, convenio) no se ve y va fijo.
+      const int = esInteres();
+      caja.querySelectorAll(".fmodSoloDiv").forEach(el => { el.hidden = int; });
+      caja.querySelectorAll(".fmodSoloInt").forEach(el => { el.hidden = !int; });
+      caja.querySelector(".fmodTxtUsar").textContent = int ? "Anotar el bruto y la retención" : "Anotar el bruto y las retenciones";
+      caja.querySelector(".fmodTxtBruto").textContent = int ? "Intereses brutos" : "Dividendo bruto";
+      caja.querySelector(".fmodTxtEsp").textContent = int ? "Retenido" : "Retenido en España";
+      caja.querySelector(".fmodTxtAntes").textContent = int ? "antes de la retención" : "antes de retenciones";
+      if (int) { E_("fis_pais").value = "ES"; E_("fis_origen").value = "0"; E_("fis_convenio").value = ""; }
       const pais = E_("fis_pais").value;
       const mon = (f.elements.moneda && f.elements.moneda.value) || "EUR";
       const sim = { EUR: "€", USD: "$", GBP: "£", CHF: "CHF", GBp: "p", GBX: "p" }[mon] || mon;
@@ -265,9 +285,9 @@
       const pO = tipoOrigen(pais, p);
       if (!tocado.origen) E_("fis_origen").value = B ? dec(B * pO / 100) : "";
       const O = leeNum(E_("fis_origen").value) || 0;
-      const retiene = selRet.value === "1";
-      // Un dividendo de empresa española lleva siempre el 19 %; lo demás, según el bróker.
-      const pE = pais === "ES" && !(p && p.tipo === "efectivo") ? 19 : retiene ? 19 : 0;
+      const retiene = selRetActivo().value === "1";
+      // Intereses: según te retengan o no. Dividendo de empresa española: siempre el 19 %. Lo demás, según el bróker.
+      const pE = int ? (retiene ? 19 : 0) : pais === "ES" ? 19 : retiene ? 19 : 0;
       const baseE = pais === "ES" ? B : (B || 0) - O;
       if (!tocado.espana) E_("fis_espana").value = B ? dec(Math.max(0, baseE) * pE / 100) : "";
       const R = leeNum(E_("fis_espana").value) || 0;
@@ -286,7 +306,9 @@
 
       const convTxt = E_("fis_convenio").value.trim();
       const conv = convTxt === "" ? null : (leeNum(convTxt) || 0) / 100;
-      caja.querySelector(".fmodNota").textContent = NOTAS[pais] || (conv == null
+      caja.querySelector(".fmodNota").textContent = int
+        ? "Los intereses van a la base del ahorro (19 % hasta 6.000 €, 21 % hasta 50.000 €…). Lo que te retiene el banco es un pago a cuenta: si no te retienen nada, lo pagas entero en la Renta."
+        : NOTAS[pais] || (conv == null
         ? "Sin convenio: en la Renta deduces lo retenido fuera, como mucho lo que pagarías en España (≈19 %)."
         : `Convenio con ${PAISES[pais] ? PAISES[pais][0] : "ese país"}: deduces como mucho el ${nf(conv * 100, conv * 100 % 1 ? 1 : 0)} % del bruto; lo retenido de más se reclama allí.`);
 
@@ -295,7 +317,9 @@
       if (!B) { cuentas.innerHTML = ""; aviso.hidden = true; return; }
       const c = calcula({ bruto: B, origen: O, espana: R, convenio: conv, pais });
       const v = x => `${nf(x)} ${sim}`;
-      const ks = [
+      const ks = int ? [
+        { e: "Te retienen", v: v(R), n: R ? `${nf(R / B * 100, 1)} % del bruto` : "nada: lo pagas en la Renta" },
+      ] : [
         { e: "Deduces en la Renta", v: v(c.deducible), n: "por doble imposición" },
         { e: "Reclamable en origen", v: v(c.reclamable), n: c.reclamable ? "lo retenido de más" : "nada de más" },
       ];
@@ -306,7 +330,7 @@
       const imp = leeNum(E_("importe").value);
       const dif = imp != null ? imp - neto : 0;
       aviso.hidden = !(Math.abs(dif) > 0.02);
-      aviso.textContent = `Ojo: bruto − retenciones = ${nf(neto)} ${sim}, pero el importe dice ${nf(imp || 0)} ${sim} (${dif > 0 ? "+" : ""}${nf(dif)}). ` +
+      aviso.textContent = `Ojo: bruto − ${int ? "retención" : "retenciones"} = ${nf(neto)} ${sim}, pero el importe dice ${nf(imp || 0)} ${sim} (${dif > 0 ? "+" : ""}${nf(dif)}). ` +
         "Puede ser una comisión del bróker o el redondeo del cambio; si no, revisa las cifras.";
     }
 
@@ -318,7 +342,7 @@
       E_("fis_origen").value = dec(fis.origen);
       E_("fis_espana").value = dec(fis.espana);
       E_("fis_convenio").value = fis.convenio == null ? "" : dec(fis.convenio * 100, 3).replace(/,?0+$/, "");
-      selRet.value = fis.espana > 0 ? "1" : "0";
+      selRetDiv.value = selRetInt.value = fis.espana > 0 ? "1" : "0";
     } else {
       ponDefectos(false);
       usar.checked = true;   // siempre marcada: basta con escribir el bruto
@@ -334,12 +358,13 @@
       }
       recalcula(true);
     });
-    selRet.addEventListener("change", () => {
-      const ent = String((producto() && producto().entidad) || "").trim().toLowerCase();
-      if (ent) { const o = lsLee(); o[ent] = selRet.value === "1"; lsGuarda(o); }
+    // Lo que elijas se recuerda para ese banco o bróker (aparte para intereses y para dividendos).
+    [selRetDiv, selRetInt].forEach(sel => sel.addEventListener("change", () => {
+      const ent = claveBroker(producto());
+      if (ent) { const o = lsLee(); o[ent] = sel.value === "1"; lsGuarda(o); }
       tocado.espana = false;
       recalcula(true);
-    });
+    }));
     E_("fis_convenio").addEventListener("change", () => { tocado.convenio = true; });
     // Cualquier cambio en el formulario recalcula; si es del bloque de retenciones, también el importe.
     const delBloque = e => !!(e && e.target && caja.contains(e.target));
@@ -356,9 +381,11 @@
   // Los datos salen de /api/dividendos-mod, pedidos de nuevo cada vez que se pinta la tabla.
   const nf2 = v => Number(v).toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   let pidiendo = 0, programado = null;
-  function etiqueta(c) {
+  function etiqueta(c, tipoProd) {
     const x = c.fiscal;
-    if (!(x && x.bruto > 0)) return `<span class="fmodChip no" title="Edítalo y escribe el bruto para que cuente en la pestaña IRPF">sin retenciones</span>`;
+    const int = tipoProd === "efectivo" || tipoProd === "p2p";
+    if (!(x && x.bruto > 0)) return `<span class="fmodChip no" title="Edítalo y escribe el bruto para que cuente en la pestaña IRPF">sin ${int ? "retención" : "retenciones"}</span>`;
+    if (int) return `<span class="fmodChip si" title="Retención anotada">✓ bruto <b>${nf2(x.bruto)} €</b> · ${x.espana ? `retenido ${nf2(x.espana)} €` : "sin retención"}</span>`;
     const pais = (PAISES[x.pais] || [x.pais || "?"])[0];
     const partes = [`bruto <b>${nf2(x.bruto)} €</b>`, escH(pais)];
     partes.push(`origen ${nf2(x.origen)} €`);
@@ -388,7 +415,7 @@
       tr.dataset.fmod = "1";
       if (!esCobro) return;
       const celda = tr.children[2];
-      if (celda) celda.insertAdjacentHTML("beforeend", "<br>" + etiqueta(c));
+      if (celda) celda.insertAdjacentHTML("beforeend", "<br>" + etiqueta(c, info[c.producto] && info[c.producto].tipo));
     });
     // Recuento al pie («9 movimientos.»)
     const tabla = document.querySelector('#editor button[data-acc="editarMov"]').closest(".tarjeta");

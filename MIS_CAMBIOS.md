@@ -244,6 +244,18 @@ del autor lleva `[mod]` (necesita git y el remoto «upstream»; si no, se salta)
     rescates de planes.
   - La Ayuda del autor todavía dice «Rendimiento → Para la Renta»: no la he tocado.
 
+- **22/11/2026 · Retención de los intereses** (`fiscal_dividendos.js`, `pestana_irpf.js`).
+  - En una cuenta remunerada o P2P, el bloque «Retenciones e impuestos» del formulario es más sencillo: Intereses
+    brutos, ¿Te retienen? (Sí, el 19 % / No) y Retenido. El importe (lo recibido) se calcula solo y se puede cambiar.
+    Cuentas: lo que te retienen, lo que te falta pagar en la Renta y lo que te queda limpio. Se guarda igual que un
+    dividendo (`fiscal` con país ES, sin origen ni convenio).
+  - «¿Te retienen?» se recuerda por banco, aparte de lo que elijas para los dividendos de ese mismo bróker (clave
+    `int:<entidad>`); si ya hay intereses anotados de esa cuenta, se usa lo del último.
+  - Etiquetas en Movimientos: «✓ bruto 30,00 € · retenido 5,70 €», «✓ … · sin retención» o «sin retención» en naranja.
+  - En IRPF, los intereses salen en su propia fila («Intereses (cuentas y P2P)»), no mezclados con España.
+  - Arreglo: «Ingr. Pasivos» e IRPF usaban como «hoy» la fecha de los últimos precios: un cobro anotado hoy sin
+    actualizar precios salía como «previsto» y no contaba. Ahora usan la fecha real (`Mods.util.hoy()`).
+
 ## Pendiente (ideas)
 - Completar el bruto y las retenciones de los dividendos antiguos (o importarlos de BD_DIV del Excel).
 - Previsión de cobros de los próximos 12 meses usando el calendario de Yahoo que ya baja el nivel 1.

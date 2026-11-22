@@ -76,7 +76,9 @@
   const kpisHtml = ks => `<div class="kpis">${ks.map(k =>
     `<div class="kpi"><div class="e">${k.e}</div><div class="v${k.c ? " " + k.c : ""}">${k.v}</div><div class="n">${k.n}</div></div>`).join("")}</div>`;
   const comparar = (a, b) => (typeof a === "string" ? a.localeCompare(b, "es") : a - b);
-  const pais = k => (F.PAISES[k] || F.PAISES.XX)[0];
+  const pais = k => (k === "INT" ? "Intereses (cuentas y P2P)" : (F.PAISES[k] || F.PAISES.XX)[0]);
+  // País del cobro para agrupar: los intereses, aparte.
+  const paisCobro = c => (c.int ? "INT" : c.fiscal.pais || "XX");
   const todosD = () => (D.productos || []).concat(D.otrosActivos || [], D.pasivos || []);
   const colorDe = id => {
     const p = todosD().find(x => x.id === id), c = p && (p.slotColor || p.color);
@@ -203,13 +205,15 @@
       Promise.all([fuente.trae(), ventas.trae()]).then(() => tab.pinta());
       return;
     }
-    const hoy = D.fechaExtracto;
+    // Hoy de verdad (no la fecha de los últimos precios): un cobro de hoy no es «futuro».
+    const hoy = M.util.hoy();
     const info = fuente.datos.productos;
     // Base del ahorro: dividendos, intereses y cupones (los alquileres van a la base general).
     const cobros = fuente.datos.cobros
       .filter(c => c.fecha <= hoy && !(info[c.producto] && info[c.producto].tipo === "inmueble"))
       .map(c => ({ ...c, nombre: (info[c.producto] && info[c.producto].corto) || c.producto,
-        conFis: !!(c.fiscal && c.fiscal.bruto > 0) }));
+        conFis: !!(c.fiscal && c.fiscal.bruto > 0),
+        int: !!(info[c.producto] && ["efectivo", "p2p"].includes(info[c.producto].tipo)) }));
     const V = ventas.datos.porAno;
 
     const setAnos = new Set(cobros.map(c => c.fecha.slice(0, 4)).concat(ventas.datos.anos));
@@ -252,7 +256,7 @@
         <div id="imodVentasCuerpo"></div>
       </section>
       <section class="tarjeta" id="imodPais">
-        <header><h2>Dividendos e intereses: retenciones por país</h2><span class="subt">Lo que te retienen fuera y qué pasa con ello</span></header>
+        <header><h2>Dividendos e intereses: retenciones</h2><span class="subt">Lo que te retienen fuera y qué pasa con ello</span></header>
         <div id="imodPaisCuerpo"></div>
       </section>
       <section class="tarjeta" id="imodCobros">
@@ -417,12 +421,12 @@
     }
     const porPais = new Map();
     l.cs.forEach(c => {
-      const k = c.fiscal.pais || "XX";
+      const k = paisCobro(c);
       let x = porPais.get(k);
       if (!x) { x = { pais: k, n: 0, bruto: 0, origen: 0, ded: 0, rec: 0, per: 0, esp: 0, conv: new Set() }; porPais.set(k, x); }
       x.n++; x.bruto += c.r.bruto; x.origen += c.r.origen; x.ded += c.r.deducible; x.rec += c.r.reclamable;
       x.per += c.r.perdido; x.esp += c.r.espana;
-      x.conv.add(k === "ES" ? "—" : c.r.convenio == null ? "sin convenio" : G.fmtPct(c.r.convenio, 0));
+      x.conv.add(k === "ES" || k === "INT" ? "—" : c.r.convenio == null ? "sin convenio" : G.fmtPct(c.r.convenio, 0));
     });
     const filas = [...porPais.values()].sort((a, b) => b.bruto - a.bruto);
     const reclamar = filas.filter(x => x.rec > 0.005);
@@ -449,7 +453,7 @@
   function pintaCobros(l, ano) {
     if (!l.cs.length) { $("#imodCobros").hidden = true; return; }
     $("#imodCobrosNota").textContent = `${l.cs.length} cobros de ${ano} con las retenciones anotadas`;
-    const filas = l.cs.map(c => ({ ...c, paisN: pais(c.fiscal.pais || "XX"), bruto: c.r.bruto, origen: c.r.origen,
+    const filas = l.cs.map(c => ({ ...c, paisN: pais(paisCobro(c)), bruto: c.r.bruto, origen: c.r.origen,
       conv: c.fiscal.pais === "ES" ? null : c.r.convenio, ded: c.r.deducible, rec: c.r.reclamable, per: c.r.perdido,
       esp: c.r.espana, neto: c.importe }));
     const eur = v => (v > 0.005 ? G.fmtEur(v) : null);
