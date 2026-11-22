@@ -43,6 +43,7 @@ siempre basta con quedarse con las dos partes (lo del autor y la línea `[mod]`)
 | `app/web/app.js` | 2 líneas al final de `pintaFondos()`: `Mods.ficha(...)` | apartados en la pestaña del producto |
 | `app/web/app.js` | 2 líneas después de `pintaDividendos()`: `Mods.resumen(...)` | apartados en «Rendimiento» |
 | `app/web/app.js` | 2 líneas al final de `pintaMes()`: `Mods.mes(...)` | filtro de años del gráfico de la pestaña «Mes» |
+| `app/web/app.js` | 1 línea antes de `const estado`: `D.vivo = null` | quita el precio en vivo (pastilla «Bitcoin en vivo») |
 | `app/web/index.html` | `"mods/mods.js"` en la lista de scripts del cargador | carga la parte del navegador |
 | `app/web/index.html` | `--s13` en los dos temas | color negro |
 | `app/web/index.html` | `.prog{…}`: quitado `max-width:760px` | barra de progreso a todo el ancho |
@@ -122,6 +123,26 @@ del autor lleva `[mod]` (necesita git y el remoto «upstream»; si no, se salta)
   - Es el mismo gráfico del autor con los mismos colores; solo cambian los meses. La elección se
     mantiene al cambiar de mes en la pestaña, pero vuelve a «Últimos 18 meses» al recargar la página.
   - Nuevo gancho en mi núcleo: `Mods.registra({ mes(meses) {…} })` (como `ficha` y `resumen`).
+
+- **22/11/2026 · «La empresa en cifras» reorganizada** (`cifras.js` y estilos en `comun.js`).
+  - Antes: filas de casillas de distinto ancho, con huecos, y un gráfico de barras finas a todo el ancho.
+  - Ahora: «La empresa» (sector, industria, capitalización, cuentas) arriba a todo el ancho; debajo,
+    una tarjeta por tema («¿Cara o barata?», «El negocio», «Deuda y solidez», «Crecimiento y
+    accionista») con casillas del mismo tamaño y el valor siempre abajo, y el gráfico de beneficio y
+    caja libre en una tarjeta al lado, de la altura de las dos tarjetas de la izquierda.
+  - En pantallas estrechas (menos de unos 860 px) todo pasa a una sola columna. Se ve igual en modo
+    claro y oscuro. Los textos, los datos y los avisos «¿Qué significa cada dato?» no han cambiado.
+  - Solo toca archivos míos (nada del autor): clases nuevas `emodCifras`, `emodGrupo`, `emodTile`…
+
+- **22/11/2026 · Quitado el indicador «Bitcoin en vivo».**
+  - Era el precio en vivo de **una sola cripto** (la primera de CoinGecko que hubiera en la cartera,
+    en tu caso The Graph, aunque la etiqueta decía «Bitcoin»). Cada minuto movía su valor y, con él,
+    el patrimonio total.
+  - Ahora el panel usa siempre el último cierre y el navegador ya no consulta a CoinGecko ni a
+    Binance. Una sola línea con `[mod]` en `app.js` (`D.vivo = null`). Para volver a activarlo, basta
+    con borrar esa línea.
+  - Con esto también desaparece la pastilla «Cotización a cierre del …» que salía cuando el
+    precio en vivo no llegaba, y en la ficha del producto, «Valor al cierre» vuelve a ser «Valor hoy».
 
 ## Pendiente (ideas)
 - Más cambios visuales: colores y textos.

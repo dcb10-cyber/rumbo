@@ -36,6 +36,21 @@
       .emodLeyenda{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:12px;color:var(--tinta2);margin-top:8px}
       .emodRejilla{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px;margin:0 0 16px}
       .emodLeyenda i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+      /* «La empresa en cifras»: tarjetas por tema, casillas iguales y el gráfico al lado */
+      .emodCifras{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:4px}
+      .emodAncho{grid-column:1/-1}
+      .emodPila{display:flex;flex-direction:column;gap:14px;min-width:0}
+      .emodPila .emodGrupo{flex:1}
+      .emodGrupo{display:flex;flex-direction:column;min-width:0;border:1px solid var(--borde);border-radius:12px;padding:14px 14px 14px}
+      .emodGrupo h3{font-size:12px;text-transform:uppercase;letter-spacing:.07em;color:var(--tinta3);margin:0 0 10px;font-weight:600}
+      .emodTiles{flex:1;display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));grid-auto-rows:1fr;gap:8px}
+      .emodEstira .emodTiles{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+      .emodTile{display:flex;flex-direction:column;justify-content:space-between;gap:6px;min-width:0;background:var(--sup2);border-radius:10px;padding:10px 12px}
+      .emodTile .e{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--tinta3);font-weight:600;line-height:1.35}
+      .emodTile .v{font-size:18px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.2}
+      .emodGraf .envGraf{flex:1}
+      .emodGraf .emodLeyenda{margin-top:6px}
+      @media(max-width:860px){.emodCifras{grid-template-columns:minmax(0,1fr)}}
     `;
     document.head.appendChild(st);
   }

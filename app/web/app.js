@@ -86,6 +86,8 @@
     return;
   }
 
+  D.vivo = null;  // [mod] sin precio en vivo: ni la pastilla «Bitcoin en vivo» ni las consultas a CoinGecko/Binance
+
   const estado = {
     tab: "patrimonio",
     rango: "todo",

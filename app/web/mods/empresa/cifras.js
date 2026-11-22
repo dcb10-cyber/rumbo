@@ -67,6 +67,32 @@
     ];
   }
 
+  /* ---------------------------------------------- cómo se reparte la ficha */
+  const casilla = ([e, v, extra]) =>
+    `<div class="emodTile" title="${escH(QUE_ES[e] || "")}"><div class="e">${e}${extra || ""}</div><div class="v">${v}</div></div>`;
+  const tarjeta = ([t, items], clase = "") =>
+    `<div class="emodGrupo ${clase}"><h3>${t}</h3><div class="emodTiles">${items.map(casilla).join("")}</div></div>`;
+  const tarjetaGrafico = (color, monC, clase) =>
+    `<div class="emodGrupo emodGraf ${clase}"><h3>Beneficio neto y caja libre, cada año${monC ? " · en " + escH(monC) : ""}</h3>
+      <div class="envGraf" id="emodGrafCuentas"></div>
+      <div class="emodLeyenda"><span><i style="background:${color}"></i>Beneficio neto</span><span><i style="background:${G.css("--s5")}"></i>Caja libre</span></div></div>`;
+
+  // Arriba, «La empresa» a todo el ancho. Debajo, dos columnas: a un lado las tarjetas de los
+  // ratios y al otro el gráfico (si hay cuentas). Si hay poco que enseñar, todo en dos columnas.
+  function distribucion(gs, hayGrafico, color, monC) {
+    const empresa = gs.find(g => g[0] === "La empresa");
+    const otros = gs.filter(g => g !== empresa);
+    let html = empresa ? tarjeta(empresa, "emodAncho emodEstira") : "";
+    if (hayGrafico && otros.length >= 3) {
+      html += otros.slice(0, 2).map(g => tarjeta(g)).join("")
+        + `<div class="emodPila">${otros.slice(2).map(g => tarjeta(g)).join("")}</div>`
+        + tarjetaGrafico(color, monC, "");
+    } else {
+      html += otros.map(g => tarjeta(g)).join("") + (hayGrafico ? tarjetaGrafico(color, monC, "emodAncho") : "");
+    }
+    return html;
+  }
+
   /* ================================================================
      FICHA DE LA ACCIÓN
      ================================================================ */
@@ -96,11 +122,7 @@
         <div class="sep"></div>
         <span class="expoNota ${c.sinConexion ? "viejo" : ""}">${c.sinConexion ? "⚠ " : ""}Yahoo Finance${consulta ? " · consultado el " + consulta : ""}</span>
       </header>
-      ${gs.map(([t, items]) => `<div class="ventanas"><span class="grupoEtq">${t}</span>${items.map(([e, v, extra]) =>
-        `<div class="ventana" title="${escH(QUE_ES[e] || "")}"><div class="e">${e}${extra || ""}</div><div class="v">${v}</div></div>`).join("")}</div>`).join("")}
-      ${hist.length >= 2 ? `<div class="emodBloque" style="margin-top:8px"><h3>Beneficio neto y caja libre, cada año${monC ? " · en " + escH(monC) : ""}</h3>
-        <div class="envGraf" id="emodGrafCuentas"></div>
-        <div class="emodLeyenda"><span><i style="background:${color}"></i>Beneficio neto</span><span><i style="background:${G.css("--s5")}"></i>Caja libre</span></div></div>` : ""}
+      <div class="emodCifras">${distribucion(gs, hist.length >= 2, color, monC)}</div>
       <details class="emodMas"><summary>¿Qué significa cada dato?</summary>
         <div class="tablaEnv" style="margin-top:10px"><table class="dt"><tbody>${usados.filter(e => QUE_ES[e]).map(e =>
           `<tr><td style="white-space:nowrap;text-align:left"><b>${e}</b></td><td style="text-align:left;white-space:normal">${QUE_ES[e]}</td></tr>`).join("")}</tbody></table></div>
@@ -110,7 +132,7 @@
         recomendación de compra o venta.</p>`;
     if (hist.length >= 2) {
       G.barrasAgrupadas($("#emodGrafCuentas"), {
-        categorias: hist.map(h => h[0]), alto: 230,
+        categorias: hist.map(h => h[0]), alto: 290,
         series: [{ nombre: "Beneficio neto", valores: hist.map(h => h[2]), color: color },
           { nombre: "Caja libre", valores: hist.map(h => h[3]), color: G.css("--s5") }],
         formatoY: v => fmtGrande(v, null) || "0",
