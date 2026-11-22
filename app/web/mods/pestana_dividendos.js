@@ -1,9 +1,8 @@
 /* ============================================================
-   mods/pestana_dividendos.js  ·  [mod] Pestaña «Dividendos»
+   mods/pestana_dividendos.js  ·  [mod] Pestaña «Ingr. Pasivos» (dividendos, intereses…)
    ============================================================
-   Archivo propio (no es del autor original). Añade la pestaña «Dividendos» entre
-   «Rendimiento» y «Mis datos» sin tocar index.html ni app.js: el botón y el panel
-   se crean desde aquí y se comportan igual que los del autor.
+   Archivo propio (no es del autor original). Añade la pestaña «Ingr. Pasivos» después de
+   «Rendimiento» sin tocar index.html ni app.js (M.util.pestana, en mods.js).
 
    Qué enseña (todo con lo que tienes anotado como «Dividendo» en Mis datos):
      - Cifras clave: total, este año frente al anterior a estas alturas, últimos 12
@@ -12,6 +11,8 @@
        de los últimos 12 meses, mes a mes (¿crece tu renta pasiva?).
      - Un año frente al anterior, mes a mes.
      - Quién te paga: ranking por producto y reparto por producto, broker y divisa.
+   Lo fiscal (retenciones, deducible, lo que falta por pagar) está en la pestaña IRPF
+   (pestana_irpf.js).
      - Todos los cobros, uno a uno.
    Filtros arriba: qué se cuenta (dividendos, intereses…) y el periodo.
 
@@ -62,68 +63,8 @@
     document.head.appendChild(st);
   }
 
-  /* ---------------------------------------------- la pestaña y su panel */
-  const recuerda = {
-    lee(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
-    guarda(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* da igual */ } },
-  };
-  const visible = () => { const p = document.getElementById("tab-" + TAB); return !!p && !p.hidden; };
-
-  function monta() {
-    const antes = document.querySelector('#tabs button[data-tab="rendimiento"]');
-    const panelAntes = document.getElementById("tab-rendimiento");
-    if (!antes || !panelAntes) return false;
-    if (document.getElementById("tab-" + TAB)) return true;
-    const b = document.createElement("button");
-    b.dataset.tab = TAB;
-    b.setAttribute("role", "tab");
-    b.setAttribute("aria-selected", "false");
-    b.textContent = "Dividendos";
-    antes.insertAdjacentElement("afterend", b);
-    const panel = document.createElement("div");
-    panel.className = "panel";
-    panel.id = "tab-" + TAB;
-    panel.setAttribute("role", "tabpanel");
-    panel.hidden = true;
-    panelAntes.insertAdjacentElement("afterend", panel);
-    b.addEventListener("click", () => abre(true));
-    return true;
-  }
-
-  // Lo mismo que hace irA() de app.js con sus pestañas.
-  function abre(subir) {
-    recuerda.guarda("patrimonio.tab", TAB);
-    // Si has cambiado datos en «Mis datos», el panel se recarga con las cifras nuevas.
-    if (window.EDITOR_SUCIO) { location.reload(); return; }
-    document.querySelectorAll("#tabs button").forEach(x =>
-      x.setAttribute("aria-selected", String(x.dataset.tab === TAB)));
-    document.querySelectorAll(".panel").forEach(p => { p.hidden = p.id !== "tab-" + TAB; });
-    pinta();
-    if (subir) window.scrollTo({ top: 0, behavior: "smooth" });
-  }
-
   /* ---------------------------------------------- datos */
-  const fuente = { datos: null, promesa: null, error: null };
-  function trae() {
-    if (location.protocol === "file:") {
-      fuente.datos = { cobros: [], productos: {} };
-      fuente.error = "Esta pestaña solo funciona con la app abierta (Iniciar.bat).";
-      return Promise.resolve(fuente.datos);
-    }
-    if (!fuente.promesa) {
-      fuente.promesa = fetch("api/dividendos-mod", { headers: { Accept: "application/json" } })
-        .then(r => (r.ok ? r.json() : null))
-        .then(j => {
-          if (!j || !j.ok) fuente.error = "No he podido leer tus dividendos" + (j && j.error ? `: ${j.error}` : ".");
-          fuente.datos = { cobros: (j && j.cobros) || [], productos: (j && j.productos) || {} };
-        })
-        .catch(() => {
-          fuente.error = "No he podido leer tus dividendos. ¿Está abierta la ventana de Rumbo?";
-          fuente.datos = { cobros: [], productos: {} };
-        });
-    }
-    return fuente.promesa;
-  }
+  const fuente = M.util.cobros;   // compartido con la pestaña IRPF (mods.js)
 
   // Productos del panel (con valor, coste y color de hoy).
   const todosD = () => (D.productos || []).concat(D.otrosActivos || [], D.pasivos || []);
@@ -188,21 +129,13 @@
   /* ================================================================
      PINTAR
      ================================================================ */
-  function pinta() {
-    const panel = document.getElementById("tab-" + TAB);
-    if (!panel || panel.hidden) return;
+  function pinta(panel) {
     if (fuente.datos === null) {
-      panel.innerHTML = `<section class="tarjeta" style="margin-top:24px"><p class="dmodVacio">Leyendo tus dividendos…</p></section>`;
-      trae().then(() => { if (visible()) pinta(); });
+      panel.innerHTML = `<section class="tarjeta" style="margin-top:24px"><p class="dmodVacio">Leyendo tus cobros…</p></section>`;
+      fuente.trae().then(() => tab.pinta());
       return;
     }
-    try {
-      pintaTodo(panel);
-    } catch (e) {
-      console.error("[mod] dividendos", e);
-      panel.innerHTML = `<div class="av" style="margin:24px 0"><span>⚠</span><span>Algo ha fallado al pintar la pestaña
-        Dividendos: ${escH(e && e.message || e)}</span></div>`;
-    }
+    pintaTodo(panel);
   }
 
   function pintaTodo(panel) {
@@ -218,7 +151,7 @@
 
     if (!todos.length) {
       panel.innerHTML = `<section class="tarjeta" style="margin-top:24px">
-        <header><h2>Dividendos</h2></header>
+        <header><h2>Ingresos pasivos</h2></header>
         <p class="dmodVacio">${fuente.error ? escH(fuente.error) : `Todavía no tienes ningún dividendo anotado. Cuando
           anotes uno (en <b>Mis datos → Movimientos</b>, tipo «Dividendo»), aquí verás cuánto te pagan tus inversiones,
           quién te paga más, cómo crece año a año y cada cobro uno a uno.`}</p></section>`;
@@ -279,9 +212,9 @@
 
     const opClase = clases.map(k => ({ k, t: CLASES[k] }));
     if (clases.length > 1) opClase.push({ k: "todo", t: "Todo junto" });
-    segm($("#dmodClase"), opClase, estado.clase, k => { estado.clase = k; pinta(); });
+    segm($("#dmodClase"), opClase, estado.clase, k => { estado.clase = k; tab.pinta(); });
     segm($("#dmodPeriodo"), [{ k: "todo", t: "Todo" }].concat(anos.slice().reverse().map(a => ({ k: a, t: a }))),
-      estado.periodo, k => { estado.periodo = k; pinta(); });
+      estado.periodo, k => { estado.periodo = k; tab.pinta(); });
 
     if (!reales.length) {
       $("#dmodKpis").innerHTML = `<p class="dmodVacio" style="margin-top:18px">Solo tienes ${nomClase} con fecha futura (previstos).</p>`;
@@ -473,7 +406,7 @@
         sobreValor: h.sobreValor, sobreCoste: h.sobreCoste, ultimo: h.ultimo, frec: frecuencia(h.n12) };
     }).sort((a, b) => b.periodo - a.periodo);
     filas.forEach((x, i) => { x.color = colorDe(x.id, i); });
-    $("#dmodQuienNota").textContent = `${filas.length} productos ${nomPeriodo} · las columnas «12 meses» miran siempre al último año`;
+    $("#dmodQuienNota").textContent = `${filas.length} ${filas.length === 1 ? "producto" : "productos"} ${nomPeriodo} · las columnas «12 meses» miran siempre al último año`;
 
     const maxPeso = Math.max(...filas.map(x => x.peso));
     tablaOrdenable($("#dmodTablaProd"), {
@@ -559,15 +492,6 @@
   }
 
   /* ---------------------------------------------- arranque */
-  if (!monta()) return;
-
-  // Repintar cuando cambian cosas que también cambian el panel del autor.
-  let t = null;
-  window.addEventListener("resize", () => { clearTimeout(t); t = setTimeout(pinta, 160); });
-  const tema = $("#btnTema"); if (tema) tema.addEventListener("click", () => setTimeout(pinta, 0));
-  const mon = $("#selMoneda"); if (mon) mon.addEventListener("change", () => setTimeout(pinta, 0));
-  const vid = $("#btnVideo"); if (vid) vid.addEventListener("click", () => setTimeout(pinta, 80));
-
-  // Si la última vez estabas aquí (o ?tab=dividendos), se vuelve a abrir.
-  if (recuerda.lee("patrimonio.tab") === TAB) abre(false);
+  const tab = M.util.pestana({ id: TAB, texto: "Ingr. Pasivos", despuesDe: "rendimiento", pinta,
+    titulo: "Ingresos pasivos: dividendos, intereses, cupones y alquileres" });
 })();

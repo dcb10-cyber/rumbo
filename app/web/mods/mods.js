@@ -5,7 +5,8 @@
      - index.html: "mods/mods.js" en la lista de scripts del cargador,
      - app.js: una línea al pintar la pestaña de un producto, que llama a
        Mods.ficha(producto, color), otra al pintar «Rendimiento», que llama a
-       Mods.resumen(productos, color), y otra al pintar «Mes», que llama a Mods.mes(meses).
+       Mods.resumen(productos, color), y otra al pintar «Mes», que llama a Mods.mes(meses),
+     - editor.js: una línea al abrir el formulario de un movimiento: Mods.formMovimiento(...).
    Todas marcadas con [mod]. Este archivo:
      1. carga los scripts de cada apartado (lista ARCHIVOS, en ese orden),
      2. reparte esas tres llamadas entre los apartados,
@@ -28,7 +29,9 @@
     "empresa/cifras.js",       // nivel 2: la empresa en cifras
     "empresa/analistas.js",    // nivel 3: analistas
     "filtro_esfuerzo.js",      // filtro de años en «Tu esfuerzo y el del mercado» (pestaña Mes)
-    "pestana_dividendos.js",   // pestaña «Dividendos» (crea su propio botón y panel)
+    "fiscal_dividendos.js",    // retenciones en el formulario de «Dividendo» (y sus cuentas)
+    "pestana_dividendos.js",   // pestaña «Ingr. Pasivos» (crea su propio botón y panel)
+    "pestana_irpf.js",         // pestaña «IRPF»: retenciones e impuestos de esos cobros
   ];
 
   /* ---------------------------------------------- utilidades comunes */
@@ -103,6 +106,86 @@
     pinta();
   }
 
+  /* ---------------------------------------------- pestañas propias */
+  // Crea una pestaña nueva (botón + panel) justo después de otra, y se comporta como las del
+  // autor: recuerda cuál estaba abierta, ?tab=<id>, recarga si cambiaste algo en «Mis datos» y
+  // repinta al cambiar el tamaño, el tema, la moneda o el modo vídeo.
+  // cfg: { id, texto, titulo?, despuesDe: id de la pestaña anterior, pinta(panel) }
+  const recuerda = {
+    lee(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    guarda(k, v) { try { localStorage.setItem(k, v); } catch (e) { /* da igual */ } },
+  };
+  function pestana(cfg) {
+    const antes = document.querySelector(`#tabs button[data-tab="${cfg.despuesDe}"]`);
+    const panelAntes = document.getElementById("tab-" + cfg.despuesDe);
+    if (!antes || !panelAntes) return null;
+    const b = document.createElement("button");
+    b.dataset.tab = cfg.id;
+    b.setAttribute("role", "tab");
+    b.setAttribute("aria-selected", "false");
+    b.textContent = cfg.texto;
+    if (cfg.titulo) b.title = cfg.titulo;
+    antes.insertAdjacentElement("afterend", b);
+    const panel = document.createElement("div");
+    panel.className = "panel";
+    panel.id = "tab-" + cfg.id;
+    panel.setAttribute("role", "tabpanel");
+    panel.hidden = true;
+    panelAntes.insertAdjacentElement("afterend", panel);
+
+    const abierta = () => !panel.hidden;
+    const pinta = () => {
+      if (!abierta()) return;
+      try { cfg.pinta(panel); } catch (e) {
+        console.error("[mod]", cfg.id, e);
+        panel.innerHTML = `<div class="av" style="margin:24px 0"><span>⚠</span><span>Algo ha fallado al pintar
+          esta pestaña: ${escH(e && e.message || e)}</span></div>`;
+      }
+    };
+    // Lo mismo que hace irA() de app.js con sus pestañas.
+    const abre = subir => {
+      recuerda.guarda("patrimonio.tab", cfg.id);
+      if (window.EDITOR_SUCIO) { location.reload(); return; }
+      document.querySelectorAll("#tabs button").forEach(x => x.setAttribute("aria-selected", String(x.dataset.tab === cfg.id)));
+      document.querySelectorAll(".panel").forEach(p => { p.hidden = p !== panel; });
+      pinta();
+      if (subir) window.scrollTo({ top: 0, behavior: "smooth" });
+    };
+    b.addEventListener("click", () => abre(true));
+    let t = null;
+    window.addEventListener("resize", () => { clearTimeout(t); t = setTimeout(pinta, 160); });
+    const tema = $("#btnTema"); if (tema) tema.addEventListener("click", () => setTimeout(pinta, 0));
+    const mon = $("#selMoneda"); if (mon) mon.addEventListener("change", () => setTimeout(pinta, 0));
+    const vid = $("#btnVideo"); if (vid) vid.addEventListener("click", () => setTimeout(pinta, 80));
+    // Las pestañas se crean una detrás de otra: se abre la guardada cuando ya existen todas.
+    setTimeout(() => { if (recuerda.lee("patrimonio.tab") === cfg.id) abre(false); }, 0);
+    return { panel, abierta, pinta, abre };
+  }
+
+  // Todos los dividendos, intereses… uno a uno (app/mods/pestana_dividendos.py), pedidos una sola vez.
+  // cobros.datos: null mientras no han llegado; luego {cobros, productos}. cobros.error: texto o null.
+  const cobros = { datos: null, error: null, promesa: null };
+  cobros.trae = () => {
+    if (location.protocol === "file:") {
+      cobros.datos = { cobros: [], productos: {} };
+      cobros.error = "Esta pestaña solo funciona con la app abierta (Iniciar.bat).";
+      return Promise.resolve(cobros.datos);
+    }
+    if (!cobros.promesa) {
+      cobros.promesa = fetch("api/dividendos-mod", { headers: { Accept: "application/json" } })
+        .then(r => (r.ok ? r.json() : null))
+        .then(j => {
+          if (!j || !j.ok) cobros.error = "No he podido leer tus cobros" + (j && j.error ? `: ${j.error}` : ".");
+          cobros.datos = { cobros: (j && j.cobros) || [], productos: (j && j.productos) || {} };
+        })
+        .catch(() => {
+          cobros.error = "No he podido leer tus cobros. ¿Está abierta la ventana de Rumbo?";
+          cobros.datos = { cobros: [], productos: {} };
+        });
+    }
+    return cobros.promesa;
+  };
+
   /* ---------------------------------------------- reparto de las llamadas de app.js */
   const apartados = [];
   let fichaActual = null;
@@ -135,9 +218,14 @@
     apartados.forEach(ap => llama(ap, "mes", [meses]));
   }
 
+  // Lo llama editor.js (una línea [mod]) al abrir el formulario de un movimiento.
+  function formMovimiento(f, m, nuevo, cfg) {
+    apartados.forEach(ap => llama(ap, "formMovimiento", [f, m, nuevo, cfg]));
+  }
+
   window.Mods = {
-    registra, ficha, resumen, mes,
-    util: { $, escH, visible, seccion, oculta, fuente, tablaOrdenable, fichaActual: () => fichaActual },
+    registra, ficha, resumen, mes, formMovimiento,
+    util: { $, escH, visible, seccion, oculta, fuente, tablaOrdenable, pestana, cobros, fichaActual: () => fichaActual },
   };
   const pend = window.MODS_FICHA;
   if (pend) fichaActual = pend[0] && pend[0].id;

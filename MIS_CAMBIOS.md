@@ -11,7 +11,9 @@ marcadas con `[mod]` que enganchan esas carpetas (lista completa más abajo).
 app/mods/                      ← lo mío, parte del servidor (Python)
   __init__.py                    engancha todos los mods al servidor (lista MODS)
   cache.py                       guarda en mis_datos/cache lo que se baja de internet
-  pestana_dividendos.py          pestaña «Dividendos»: todos los cobros  →  /api/dividendos-mod
+  pestana_dividendos.py          pestaña «Ingr. Pasivos»: todos los cobros  →  /api/dividendos-mod
+  fiscal_dividendos.py           guarda las retenciones de cada dividendo (campo «fiscal»)
+  irpf.py                        pestaña «IRPF»: ventas de todos los años  →  /api/irpf-mod
   empresa/                       datos de empresas de Yahoo para acciones y ETF
     yahoo.py                       qué se pide a Yahoo y cómo se lee
     comun.py                       a qué productos se aplica y cómo se recorre la cartera
@@ -24,10 +26,16 @@ app/web/mods/                  ← lo mío, parte del navegador (JavaScript)
     comun.js                       estilos (clases emod…) y formatos comunes
     dividendos.js / cifras.js / analistas.js   un archivo por apartado
   filtro_esfuerzo.js             filtro de años en «Tu esfuerzo y el del mercado» (pestaña Mes)
-  pestana_dividendos.js          pestaña «Dividendos» (crea su botón y su panel)
+  fiscal_dividendos.js           retenciones en el formulario de «Dividendo» + tabla de países y cuentas
+  pestana_dividendos.js          pestaña «Ingr. Pasivos» (crea su botón y su panel)
+  pestana_irpf.js                pestaña «IRPF»: retenciones e impuestos
 tests/test_mods_empresa.py     ← mis pruebas (sin internet)
 tests/test_mods_dividendos.py
+tests/test_mods_irpf.py
 ```
+
+**Para añadir una pestaña nueva**: `Mods.util.pestana({ id, texto, despuesDe, pinta(panel) })` (en
+`mods.js`) crea el botón y el panel y se encarga de recordarla, del tema, la moneda, etc.
 
 **Para añadir un mod nuevo** (por ejemplo, el control de gastos), sin tocar nada del autor:
 - Servidor: crea `app/mods/gastos.py` (o una carpeta) con `registra(app, cartera, carpeta_cache)`
@@ -52,6 +60,9 @@ siempre basta con quedarse con las dos partes (lo del autor y la línea `[mod]`)
 | `app/web/index.html` | `.prog{…}`: quitado `max-width:760px` | barra de progreso a todo el ancho |
 | `app/web/index.html` | `.hito{…}`: `flex:1 1 0` en vez de `flex:none` | hitos repartidos por todo el ancho |
 | `app/motor.py` | color 13 en `PALETA` | color negro |
+| `app/almacen.py` | 2 líneas en `guarda_movimiento()`: `fiscal_de(...)` | guardar las retenciones del dividendo |
+| (ninguna) | «Para la Renta» de Rendimiento se oculta con CSS desde `pestana_irpf.js` (`#seccionFiscal`) | ahora está en IRPF |
+| `app/web/editor.js` | 1 línea tras `rellena(...)` en `formMovimiento()`: `Mods.formMovimiento(...)` | campos de retenciones en el formulario |
 | `app/web/editor.js` | 2 líneas: 13 colores en el selector | color negro |
 
 La prueba `test_lo_tocado_del_autor_lleva_mod` comprueba que toda línea añadida en un archivo
@@ -166,10 +177,77 @@ del autor lleva `[mod]` (necesita git y el remoto «upstream»; si no, se salta)
   - Los datos vienen de la ruta nueva `/api/dividendos-mod` (solo lee tu cartera, no baja nada de
     internet). El resumen del autor en «Rendimiento» sigue igual.
 
+- **22/11/2026 · «Dividendos» pasa a llamarse «Ingr. Pasivos»** (también cuenta intereses, cupones y alquileres).
+
+- **22/11/2026 · Retenciones de cada dividendo** (`fiscal_dividendos.py/.js`).
+  - En Mis datos → Movimientos → Dividendo hay un bloque nuevo «Retenciones e impuestos» (casilla
+    «Anotar el bruto y las retenciones»): país, dividendo bruto, retenido en origen, retenido en España,
+    máximo del convenio y si el bróker retiene en España.
+  - Se rellena solo: el país sale del ISIN (o del sufijo del ticker; Yahoo sin sufijo = EE. UU.), la
+    retención en origen de una tabla de ~30 países (EE. UU. 15 %, Alemania 26,375 %, Suiza 35 %,
+    Dinamarca 27 % sin convenio…), la española es el 19 % de lo que llega si el bróker es español
+    (MyInvestor, CaixaBank, ING…) y el «Importe total» del autor = bruto − retenciones. Todo editable.
+    Lo que elijas en «¿Tu bróker retiene en España?» se recuerda para ese bróker. Para el siguiente
+    dividendo del mismo producto se usan el país y el convenio del anterior.
+  - Debajo, las cuentas: lo que deduces en la Renta, lo reclamable en origen, lo que se pierde (países
+    sin convenio), lo que te falta pagar (o te devuelven) al 19 % y lo que te queda limpio. Avisa si
+    bruto − retenciones no cuadra con el importe.
+  - Se guarda en el movimiento como `"fiscal": {pais, bruto, origen, espana, convenio, moneda?, fx?}`,
+    todo en euros (si escribes en dólares, con el mismo cambio que el importe). Desmarcar la casilla y
+    guardar lo quita. Si algún día quito el mod, el autor ignora ese campo (pero lo borra al editar ese
+    movimiento con su formulario).
+  - Regla usada: en la Renta se deduce lo menor entre lo retenido fuera (como mucho, el % del
+    convenio) y lo que pagarías en España por ese cobro; lo retenido por encima del convenio se
+    reclama al otro país; sin convenio (Dinamarca desde 2009) no hay nada que reclamar y lo que pase
+    de lo que pagarías en España se pierde.
+  - En **Ingr. Pasivos**, tarjeta nueva **«Hacienda {año}»**: bruto, retenido en origen, deducible,
+    reclamable, lo que se pierde, retenido en España, impuesto con la escala del ahorro (19-30 %) solo
+    sobre estos cobros y lo que falta por pagar o te devuelven; tabla por país. Los cobros sin datos
+    fiscales se cuentan aparte y se avisa. En «Todos los cobros», columnas Bruto, Ret. origen y Ret. España.
+
+- **22/11/2026 · Pestaña «IRPF»** (`pestana_irpf.js`), entre «Ingr. Pasivos» y «Mis datos».
+  - Todo lo fiscal sale de «Ingr. Pasivos» (allí ya no hay tarjeta Hacienda ni columnas de retenciones)
+    y va aquí, por año de la Renta: resumen (bruto, retenido en origen, deducible, reclamable, lo que se
+    pierde, retenido en España, impuesto con la escala del ahorro, lo que falta pagar o te devuelven),
+    tabla por país con cómo reclamar lo retenido de más, cobro a cobro, los cobros sin retenciones
+    anotadas (para completarlos) y año a año. Los alquileres no entran (van a la base general).
+  - Los datos se siguen apuntando en el formulario de «Dividendo» (bloque «Retenciones e impuestos»).
+  - Código común nuevo en `mods.js`: `Mods.util.pestana(...)` (crear pestañas) y `Mods.util.cobros`
+    (los cobros de `/api/dividendos-mod`, pedidos una sola vez para las dos pestañas).
+
+- **22/11/2026 · Arreglos.**
+  - «Ingr. Pasivos»: los filtros «Qué cuento» y «Periodo» no hacían nada desde la reorganización de las
+    pestañas (llamaban a `pinta()` sin el panel). Ya funcionan.
+  - Formulario de Dividendo: la casilla «Anotar el bruto y las retenciones» sale siempre marcada (también al
+    editar uno antiguo). El «Importe total» se recalcula (bruto − retenciones) cada vez que cambias algo del
+    bloque de retenciones, también al editar; si lo escribes a mano, se queda tu cifra hasta que vuelvas a
+    tocar el bruto o las retenciones.
+
+- **22/11/2026 · Retenciones visibles en Mis datos → Movimientos** (`fiscal_dividendos.js`).
+  - Debajo del tipo de cada dividendo o interés sale una etiqueta: en verde lo anotado («✓ bruto 2,29 € ·
+    Estados Unidos · origen 0,34 €», y lo retenido en España si hay) o «sin retenciones» en naranja. Al pie,
+    «X de Y dividendos o intereses con retenciones anotadas (faltan Z)», según el filtro de producto.
+  - No toca editor.js: el mod completa la tabla del autor cuando aparece (MutationObserver) con los datos de
+    `/api/dividendos-mod`, que ahora también devuelve el `id` de cada movimiento.
+
+- **22/11/2026 · IRPF completo: ventas, compensación de pérdidas y liquidación** (`irpf.py`, `pestana_irpf.js`).
+  - Las ventas (ganancias y pérdidas) salen del mismo cálculo que «Para la Renta» del autor (`fiscal.informe`:
+    FIFO, traspasos, avisos de la regla de los dos meses), de todos los años a la vez (`/api/irpf-mod`).
+  - «Para la Renta» ya no se ve en **Rendimiento** (CSS desde el mod, sin tocar app.js); todo está en **IRPF**:
+    tabla de ventas, comisiones de custodia, rescates de planes y el CSV para Excel.
+  - Nueva tarjeta «Cómo sale tu base del ahorro»: dividendos/intereses brutos − gastos de custodia,
+    ganancias y pérdidas por ventas, compensación entre ellas (máx. 25 %), pérdidas de los 4 años anteriores
+    (las más antiguas primero), base, impuesto con la escala del ahorro, deducción por doble imposición (sin
+    pasar del impuesto), retenciones y resultado. Debajo, lo pendiente de compensar y hasta qué año.
+  - El resumen de arriba y «Año a año» ya incluyen las ventas. Los dividendos sin el bruto anotado siguen
+    fuera (se avisa). No incluye: retenciones de fondos españoles al vender, otras ganancias, alquileres,
+    rescates de planes.
+  - La Ayuda del autor todavía dice «Rendimiento → Para la Renta»: no la he tocado.
+
 ## Pendiente (ideas)
-- Dividendos, fase 2: retención en origen, doble imposición recuperable y exceso reclamable por país
-  (hoy Rumbo solo guarda importe y comisión; habría que anotarlo aparte). Previsión de cobros de los
-  próximos 12 meses usando el calendario de Yahoo que ya baja el nivel 1.
+- Completar el bruto y las retenciones de los dividendos antiguos (o importarlos de BD_DIV del Excel).
+- Previsión de cobros de los próximos 12 meses usando el calendario de Yahoo que ya baja el nivel 1.
+- Checklist de lo reclamable por país (formulario, plazo, si ya lo pediste).
 - Más cambios visuales: colores y textos.
 - Control de gastos (pensar antes de programar). Iría como mod nuevo (ver «Para añadir un mod nuevo»).
 

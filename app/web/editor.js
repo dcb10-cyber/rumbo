@@ -559,6 +559,7 @@
       return null;
     }, nuevo ? "Guardar movimiento" : "Guardar cambios");
     rellena(f, { ...m, unidades: decimal(m.unidades || ""), importe: decimal(m.importe), comision: decimal(m.comision) });
+    if (window.Mods && window.Mods.formMovimiento) window.Mods.formMovimiento(f, m, nuevo, E.cfg);  // [mod] retenciones del dividendo (web/mods/fiscal_dividendos.js)
     const selMoneda = f.elements.moneda;
     const ponMonedas = () => {
       const antes = selMoneda.value || "EUR";

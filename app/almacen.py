@@ -367,6 +367,8 @@ def guarda_movimiento(cfg, datos):
         mov["comision"] = round(comision, 2)
     if texto(datos.get("nota")):
         mov["nota"] = texto(datos.get("nota"))
+    from .mods.fiscal_dividendos import fiscal_de  # [mod] retenciones del dividendo (app/mods/fiscal_dividendos.py)
+    mov.update(fiscal_de(datos, mov))  # [mod]
     lista = cfg.setdefault("movimientos", [])
     existente = next((m for m in lista if m.get("id") == datos.get("id")), None) if datos.get("id") else None
     if existente:

@@ -10,7 +10,9 @@ sus actualizaciones, como mucho choca esa línea.
       __init__.py        este archivo: engancha todos los mods al servidor
       cache.py           guardar en mis_datos/cache lo que se baja de internet
       empresa/           datos de empresas (Yahoo): dividendos, cifras, analistas
-      pestana_dividendos.py  la pestaña «Dividendos»: todos los cobros uno a uno
+      pestana_dividendos.py  pestaña «Ingr. Pasivos»: todos los cobros uno a uno
+      fiscal_dividendos.py   retenciones de cada dividendo (lo llama almacen.py)
+      irpf.py                pestaña «IRPF»: las ventas de todos los años
 
 La parte del navegador está en app/web/mods/ (misma idea, mismo orden).
 
@@ -18,9 +20,9 @@ Para añadir un mod nuevo: crea su módulo o carpeta aquí, con una función
 registra(app, cartera, carpeta_cache), y añádelo a MODS.
 """
 
-from . import empresa, pestana_dividendos
+from . import empresa, irpf, pestana_dividendos
 
-MODS = [empresa, pestana_dividendos]
+MODS = [empresa, pestana_dividendos, irpf]
 
 
 def registra(app, cartera, carpeta_cache):

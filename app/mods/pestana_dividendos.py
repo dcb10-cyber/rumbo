@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-[mod] Pestaña «Dividendos»: todos los cobros, para analizarlos en el navegador
-==============================================================================
+[mod] Pestaña «Ingr. Pasivos»: todos los cobros, para analizarlos en el navegador
+=================================================================================
 El panel del autor (DATOS) solo trae los dividendos ya resumidos (por año, por
 producto y los 12 últimos). Para la pestaña hacen falta todos, uno a uno, así
 que esta ruta los saca tal cual de la cartera activa:
 
     GET /api/dividendos-mod  →  {"ok": true,
-                                 "cobros": [{fecha, producto, importe, comision, unidades, nota}, ...],
+                                 "cobros": [{id, fecha, producto, importe, comision, unidades, nota, fiscal}, ...],
                                  "productos": {id: {nombre, corto, tipo, entidad, moneda}}}
 
 Son los movimientos de tipo «dividendo» (dividendos, cupones, intereses de cuentas y
@@ -31,11 +31,12 @@ def cobros(cfg):
         if m.get("tipo") != "dividendo" or m.get("producto") not in prods or not m.get("fecha"):
             continue
         u = _num(m.get("unidades"))
-        lista.append({"fecha": str(m["fecha"])[:10], "producto": m["producto"],
+        lista.append({"id": m.get("id"), "fecha": str(m["fecha"])[:10], "producto": m["producto"],
                       "importe": round(_num(m.get("importe")), 2),
                       "comision": round(_num(m.get("comision")), 2),
                       "unidades": u if u > 0 else None,
-                      "nota": str(m.get("nota") or "")})
+                      "nota": str(m.get("nota") or ""),
+                      "fiscal": m.get("fiscal") if isinstance(m.get("fiscal"), dict) else None})
     lista.sort(key=lambda c: (c["fecha"], c["producto"]))
     usados = {c["producto"] for c in lista}
     info = {pid: {"nombre": p.get("nombre") or pid, "corto": p.get("corto") or p.get("nombre") or pid,
