@@ -11,6 +11,7 @@ marcadas con `[mod]` que enganchan esas carpetas (lista completa más abajo).
 app/mods/                      ← lo mío, parte del servidor (Python)
   __init__.py                    engancha todos los mods al servidor (lista MODS)
   cache.py                       guarda en mis_datos/cache lo que se baja de internet
+  pestana_dividendos.py          pestaña «Dividendos»: todos los cobros  →  /api/dividendos-mod
   empresa/                       datos de empresas de Yahoo para acciones y ETF
     yahoo.py                       qué se pide a Yahoo y cómo se lee
     comun.py                       a qué productos se aplica y cómo se recorre la cartera
@@ -23,7 +24,9 @@ app/web/mods/                  ← lo mío, parte del navegador (JavaScript)
     comun.js                       estilos (clases emod…) y formatos comunes
     dividendos.js / cifras.js / analistas.js   un archivo por apartado
   filtro_esfuerzo.js             filtro de años en «Tu esfuerzo y el del mercado» (pestaña Mes)
+  pestana_dividendos.js          pestaña «Dividendos» (crea su botón y su panel)
 tests/test_mods_empresa.py     ← mis pruebas (sin internet)
+tests/test_mods_dividendos.py
 ```
 
 **Para añadir un mod nuevo** (por ejemplo, el control de gastos), sin tocar nada del autor:
@@ -144,7 +147,29 @@ del autor lleva `[mod]` (necesita git y el remoto «upstream»; si no, se salta)
   - Con esto también desaparece la pastilla «Cotización a cierre del …» que salía cuando el
     precio en vivo no llegaba, y en la ficha del producto, «Valor al cierre» vuelve a ser «Valor hoy».
 
+- **22/11/2026 · Pestaña «Dividendos»** (`pestana_dividendos.py/.js`).
+  - Nueva pestaña entre «Rendimiento» y «Mis datos». **No toca ningún archivo del autor**: el
+    botón y el panel los crea el propio mod y se comportan como los demás (recuerda la pestaña
+    al recargar, `?tab=dividendos`, tema, moneda, modo vídeo, recarga si hay cambios en Mis datos).
+  - Filtros arriba: **qué cuento** (Dividendos / Intereses / Cupones / Alquileres / Todo junto,
+    según el tipo del producto: cuentas y P2P = intereses, bonos = cupones, inmuebles = alquileres)
+    y **periodo** (Todo o un año).
+  - Cifras: total, este año hasta hoy frente al año pasado a estas alturas, últimos 12 meses frente a
+    los 12 anteriores, media al mes, rentabilidad sobre lo que vale y sobre lo que pusiste (YOC),
+    cuántos productos te pagan.
+  - Tarjetas: «Año a año» (gráfico + tabla año × mes coloreada, como «Div. Anuales» del Excel),
+    «Tu renta de los últimos 12 meses» (línea móvil: ¿crece la renta pasiva?), «año frente al
+    anterior, mes a mes», «Quién te paga» (ranking ordenable con % del total, frecuencia de pago,
+    YOC; concentración; donuts por producto, broker y divisa) y «Todos los cobros» (con comisión,
+    importe por título si anotaste títulos, y nota).
+  - Los cobros con fecha futura salen como «previsto» en la lista y no cuentan en las cifras.
+  - Los datos vienen de la ruta nueva `/api/dividendos-mod` (solo lee tu cartera, no baja nada de
+    internet). El resumen del autor en «Rendimiento» sigue igual.
+
 ## Pendiente (ideas)
+- Dividendos, fase 2: retención en origen, doble imposición recuperable y exceso reclamable por país
+  (hoy Rumbo solo guarda importe y comisión; habría que anotarlo aparte). Previsión de cobros de los
+  próximos 12 meses usando el calendario de Yahoo que ya baja el nivel 1.
 - Más cambios visuales: colores y textos.
 - Control de gastos (pensar antes de programar). Iría como mod nuevo (ver «Para añadir un mod nuevo»).
 

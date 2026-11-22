@@ -28,6 +28,7 @@
     "empresa/cifras.js",       // nivel 2: la empresa en cifras
     "empresa/analistas.js",    // nivel 3: analistas
     "filtro_esfuerzo.js",      // filtro de años en «Tu esfuerzo y el del mercado» (pestaña Mes)
+    "pestana_dividendos.js",   // pestaña «Dividendos» (crea su propio botón y panel)
   ];
 
   /* ---------------------------------------------- utilidades comunes */
