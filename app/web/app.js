@@ -856,6 +856,8 @@
     pintaFichaFondo(p);
     pintaExposicion(p);
     pintaTablaFondo(p);
+    // [mod] Dividendos, splits y 52 semanas de acciones y ETF: todo en empresa_mod.js
+    window.EMPRESA_MOD_FICHA = [p, color(p)]; if (window.EmpresaMod) window.EmpresaMod.ficha(p, color(p));  // [mod]
   }
 
   // «Ganancia total = precio + ventas + dividendos − comisiones», con las partes que tenga.
@@ -1167,6 +1169,8 @@
 
     pintaComparacion();
     pintaDividendos();
+    // [mod] Lo que pagan tus acciones y ETF: todo en empresa_mod.js
+    window.EMPRESA_MOD_RESUMEN = [TODOS(), color]; if (window.EmpresaMod) window.EmpresaMod.resumen(TODOS(), color);  // [mod]
     pintaFiscal();
 
     const comp = D.comparador || [];

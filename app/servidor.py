@@ -1146,6 +1146,11 @@ def api_diagnostico():
     return jsonify(ok=True, texto=texto)
 
 
+# [mod] Dividendos, splits y 52 semanas de acciones y ETF: todo está en empresa_mod.py.
+from . import empresa_mod  # noqa: E402  [mod]
+empresa_mod.registra(app, lambda: cartera(), lambda: os.path.join(DATOS, "cache"))  # [mod]
+
+
 @app.get("/api/ping")
 def api_ping():
     return jsonify(app="patrimonio")
