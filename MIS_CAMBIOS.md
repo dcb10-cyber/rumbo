@@ -256,6 +256,13 @@ del autor lleva `[mod]` (necesita git y el remoto «upstream»; si no, se salta)
   - Arreglo: «Ingr. Pasivos» e IRPF usaban como «hoy» la fecha de los últimos precios: un cobro anotado hoy sin
     actualizar precios salía como «previsto» y no contaba. Ahora usan la fecha real (`Mods.util.hoy()`).
 
+- **22/11/2026 · «Mes a mes» en Ingr. Pasivos.**
+  - Con un año elegido sale solo ese año (antes salía comparado con el anterior). Al pasar el ratón por un mes, la
+    viñeta da el total y lo que pagó cada producto ese mes (de más a menos, ×2 si pagó dos veces, máx. 12 + «N más»).
+    El gráfico es el del autor (`G.barrasAgrupadas`), que no deja cambiar la viñeta: el mod escucha el ratón en la
+    misma zona después que él y reescribe el contenido y la posición (`vinetaPorProducto`).
+  - Con «Todo» salen todos los años, uno al lado del otro, con la viñeta del autor como antes.
+
 ## Pendiente (ideas)
 - Completar el bruto y las retenciones de los dividendos antiguos (o importarlos de BD_DIV del Excel).
 - Previsión de cobros de los próximos 12 meses usando el calendario de Yahoo que ya baja el nivel 1.

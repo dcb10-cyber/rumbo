@@ -359,30 +359,92 @@
     });
   }
 
-  /* ---------------------------------------------- un año frente al anterior, mes a mes */
+  /* ---------------------------------------------- mes a mes */
+  // Un año elegido: solo ese año, y al pasar el ratón por un mes, el total y lo que pagó cada producto.
+  // «Todo»: todos los años, uno al lado del otro, para compararlos (viñeta del autor, como siempre).
   function pintaMes(reales, anos, hoy) {
     if (!reales.length) { $("#dmodMes").hidden = true; return; }
-    const ano = estado.periodo === "todo" ? hoy.slice(0, 4) : estado.periodo;
-    const ant = String(+ano - 1);
     const porMes = a => {
       const v = new Array(12).fill(0);
       reales.forEach(c => { if (c.fecha.startsWith(a)) v[+c.fecha.slice(5, 7) - 1] += c.importe; });
       return v;
     };
-    const vA = porMes(ano), vB = porMes(ant);
-    const hayAnt = anos.includes(ant) && vB.some(v => v);
-    $("#dmodMesTit").textContent = hayAnt ? `${ano} frente a ${ant}, mes a mes` : `${ano}, mes a mes`;
+    const cats = MESES.map((_, i) => `2000-${String(i + 1).padStart(2, "0")}`);
+    const formatoCat = c => MESES[+c.slice(5, 7) - 1];
+    const cont = $("#dmodGrafMes");
+
+    if (estado.periodo === "todo") {
+      const conDatos = anos.filter(a => reales.some(c => c.fecha.startsWith(a)));
+      const pal = [11, 1, 4, 7, 2, 9, 5, 12].map(i => G.css("--s" + i));
+      const series = conDatos.map((a, k) => ({ nombre: a, valores: porMes(a),
+        color: k === conDatos.length - 1 ? G.css("--s3") : pal[(conDatos.length - 2 - k) % pal.length] }));
+      let mejor = null;
+      series.forEach(s => s.valores.forEach((v, m) => { if (!mejor || v > mejor.v) mejor = { v, m, a: s.nombre }; }));
+      $("#dmodMesTit").textContent = conDatos.length > 1 ? "Todos los años, mes a mes" : `${conDatos[0]}, mes a mes`;
+      $("#dmodMesNota").textContent = mejor && mejor.v > 0
+        ? `El mes que más cobraste: ${MESES[mejor.m].toLowerCase()} de ${mejor.a} (${G.fmtEur(mejor.v, 0)})` : "";
+      G.barrasAgrupadas(cont, { categorias: cats, alto: 240, formatoCat, series, formatoValor: v => G.fmtEur(v, 0) });
+      return;
+    }
+
+    const ano = estado.periodo;
+    const vA = porMes(ano);
+    $("#dmodMesTit").textContent = `${ano}, mes a mes`;
     const mejor = vA.indexOf(Math.max(...vA));
     $("#dmodMesNota").textContent = vA[mejor] > 0
       ? `El mes que más cobraste en ${ano}: ${MESES[mejor].toLowerCase()} (${G.fmtEur(vA[mejor], 0)})` : "";
-    const series = [];
-    if (hayAnt) series.push({ nombre: ant, color: G.css("--s11"), valores: vB });
-    series.push({ nombre: ano, color: G.css("--s3"), valores: vA });
-    G.barrasAgrupadas($("#dmodGrafMes"), {
-      categorias: MESES.map((_, i) => `${ano}-${String(i + 1).padStart(2, "0")}`), alto: 240,
-      formatoCat: c => MESES[+c.slice(5, 7) - 1], series,
-      formatoValor: v => G.fmtEur(v, 0),
+    G.barrasAgrupadas(cont, { categorias: cats, alto: 240, formatoCat,
+      series: [{ nombre: ano, color: G.css("--s3"), valores: vA }], formatoValor: v => G.fmtEur(v, 0) });
+
+    // Detalle de cada mes: quién pagó y cuánto.
+    const detalle = MESES.map(() => new Map());
+    reales.forEach(c => {
+      if (!c.fecha.startsWith(ano)) return;
+      const m = detalle[+c.fecha.slice(5, 7) - 1];
+      const x = m.get(c.producto) || { nombre: c.nombre, id: c.producto, importe: 0, n: 0 };
+      x.importe += c.importe; x.n++;
+      m.set(c.producto, x);
     });
+    const colores = new Map();
+    reales.forEach(c => { if (!colores.has(c.producto)) colores.set(c.producto, colorDe(c.producto, colores.size)); });
+    vinetaPorProducto(cont, i => {
+      const filas = [...detalle[i].values()].sort((a, b) => b.importe - a.importe);
+      const max = 12, resto = filas.slice(max);
+      return `<b>${MESES[i]} ${ano}</b><div class="ttTotal">${G.fmtEur(vA[i])}</div>` +
+        (filas.length ? `<table>${filas.slice(0, max).map(x => `<tr><td><i style="background:${colores.get(x.id)}"></i>${escH(x.nombre)}${x.n > 1 ? ` <small>×${x.n}</small>` : ""}</td><td>${G.fmtEur(x.importe)}</td></tr>`).join("")}` +
+          (resto.length ? `<tr class="sep"><td>${resto.length} más</td><td>${G.fmtEur(sum(resto.map(x => x.importe)))}</td></tr>` : "") + `</table>`
+          : `<div class="subt">Sin cobros este mes</div>`);
+    });
+  }
+
+  // Cambia la viñeta del gráfico de barras del autor (G.barrasAgrupadas) por la nuestra.
+  // Su gráfico no deja personalizarla: escuchamos el ratón en la misma zona, después que él,
+  // y reescribimos el contenido y la posición (mismas medidas y reglas que graficos.js).
+  function vinetaPorProducto(cont, contenido) {
+    const svg = cont.querySelector("svg"), tt = cont.querySelector(".gtt");
+    const captura = svg && [...svg.querySelectorAll("rect")].filter(r => r.getAttribute("fill") === "transparent").pop();
+    if (!svg || !tt || !captura) return;
+    const W = +svg.getAttribute("width"), Pl = 58, Pr = 14, paso = (W - Pl - Pr) / 12;
+    const mover = ev => {
+      const r = svg.getBoundingClientRect();
+      const px = (ev.clientX - r.left) * (W / r.width);
+      const i = Math.max(0, Math.min(11, Math.floor((px - Pl) / paso)));
+      tt.innerHTML = contenido(i);
+      tt.classList.add("on");
+      const x = (Pl + paso * i + paso / 2) * (r.width / W), y = ev.clientY - r.top;
+      const cw = cont.clientWidth, tw = tt.offsetWidth || 200, th = tt.offsetHeight || 80;
+      let tx = x + 14;
+      if (tx + tw > cw - 4) tx = x - tw - 14;
+      if (tx < 4) tx = 4;
+      // Encima del ratón; si no cabe, debajo; y si tampoco, lo más arriba posible sin salirse del gráfico.
+      const ch = cont.clientHeight;
+      let ty = y - th - 12;
+      if (ty < 4) ty = y + 18;
+      if (ty + th > ch - 4) ty = Math.max(4, ch - th - 4);
+      tt.style.transform = `translate(${tx}px, ${ty}px)`;
+    };
+    captura.addEventListener("pointermove", mover);
+    captura.addEventListener("pointerdown", mover);
   }
 
   /* ---------------------------------------------- quién te paga */
