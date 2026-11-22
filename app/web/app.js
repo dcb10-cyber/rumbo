@@ -832,6 +832,8 @@
         { nombre: "Lo puso el mercado", color: G.css("--s3"), valores: ult.map(x => x.mercado) },
       ],
     });
+    // [mod] Filtro de años del gráfico de arriba: todo en web/mods/filtro_esfuerzo.js
+    window.MODS_MES = [rm]; if (window.Mods) window.Mods.mes(rm);  // [mod]
   }
 
   /* ================================================================

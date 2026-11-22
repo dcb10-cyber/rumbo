@@ -93,7 +93,7 @@ a.btn{text-decoration:none}
 .pos{color:var(--bien)} .neg{color:var(--mal)}
 .fuerte{font-weight:650;color:var(--tinta)}
 
-.prog{margin-top:26px;max-width:760px}
+.prog{margin-top:26px} /* [mod] barra a todo el ancho del panel (antes tenía max-width:760px) */
 .progBarra{height:9px;border-radius:99px;background:var(--sup2);overflow:hidden;border:1px solid var(--borde)}
 .progRelleno{height:100%;background:linear-gradient(90deg,var(--s1),var(--s3));border-radius:99px;transition:width .8s cubic-bezier(.2,.7,.3,1)}
 .progPie{display:flex;justify-content:space-between;margin-top:7px;font-size:12.5px;color:var(--tinta3)}
@@ -315,7 +315,7 @@ svg.grafico .barValArriba{fill:var(--tinta);font-size:12px;font-weight:640;font-
 
 /* ============================ hitos ============================ */
 .hitos{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px}
-.hito{flex:none;min-width:132px;background:var(--sup2);border-radius:11px;padding:13px 15px;border:1px solid transparent}
+.hito{flex:1 1 0;min-width:132px;background:var(--sup2);border-radius:11px;padding:13px 15px;border:1px solid transparent} /* [mod] los hitos se reparten todo el ancho (antes flex:none) */
 .hito.hecho{border-color:color-mix(in srgb,var(--bien) 40%,transparent)}
 .hito .im{font-size:17px;font-weight:660;font-variant-numeric:tabular-nums}
 .hito .fe{font-size:12px;color:var(--tinta3);margin-top:4px}

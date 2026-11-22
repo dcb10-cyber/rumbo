@@ -22,6 +22,7 @@ app/web/mods/                  ← lo mío, parte del navegador (JavaScript)
   empresa/
     comun.js                       estilos (clases emod…) y formatos comunes
     dividendos.js / cifras.js / analistas.js   un archivo por apartado
+  filtro_esfuerzo.js             filtro de años en «Tu esfuerzo y el del mercado» (pestaña Mes)
 tests/test_mods_empresa.py     ← mis pruebas (sin internet)
 ```
 
@@ -41,8 +42,11 @@ siempre basta con quedarse con las dos partes (lo del autor y la línea `[mod]`)
 | `app/servidor.py` | 3 líneas antes de `/api/ping`: `mods.registra(...)` | todas las rutas de mis mods |
 | `app/web/app.js` | 2 líneas al final de `pintaFondos()`: `Mods.ficha(...)` | apartados en la pestaña del producto |
 | `app/web/app.js` | 2 líneas después de `pintaDividendos()`: `Mods.resumen(...)` | apartados en «Rendimiento» |
+| `app/web/app.js` | 2 líneas al final de `pintaMes()`: `Mods.mes(...)` | filtro de años del gráfico de la pestaña «Mes» |
 | `app/web/index.html` | `"mods/mods.js"` en la lista de scripts del cargador | carga la parte del navegador |
 | `app/web/index.html` | `--s13` en los dos temas | color negro |
+| `app/web/index.html` | `.prog{…}`: quitado `max-width:760px` | barra de progreso a todo el ancho |
+| `app/web/index.html` | `.hito{…}`: `flex:1 1 0` en vez de `flex:none` | hitos repartidos por todo el ancho |
 | `app/motor.py` | color 13 en `PALETA` | color negro |
 | `app/web/editor.js` | 2 líneas: 13 colores en el selector | color negro |
 
@@ -100,6 +104,24 @@ del autor lleva `[mod]` (necesita git y el remoto «upstream»; si no, se salta)
   - Comprobado: todas las pruebas (las del autor y las mías) pasan, y el panel se ve **idéntico** (mismo
     HTML en 46 pantallas probadas en Chrome, con datos inventados), igual que las respuestas del
     servidor, lo que se pide a Yahoo y los archivos de caché.
+
+- **22/11/2026 · Barra de progreso del patrimonio a todo el ancho.**
+  - Antes la barra de «% del camino hacia la meta» se paraba a los 760 px; ahora ocupa el mismo
+    ancho que las tarjetas de debajo (una sola línea de CSS en `index.html`, marcada con `[mod]`).
+
+- **22/11/2026 · Hitos repartidos por todo el ancho de su tarjeta.**
+  - Las casillas de «Hitos» tenían un ancho fijo y dejaban un hueco a la derecha. Ahora se reparten
+    el ancho a partes iguales, sean 5, 7 o los que haya; en pantallas estrechas, si no caben
+    (mínimo 132 px cada una), la fila sigue pudiendo desplazarse de lado. Una línea de CSS con `[mod]`.
+
+- **22/11/2026 · Filtro de años en «Tu esfuerzo y el del mercado, mes a mes»** (`filtro_esfuerzo.js`).
+  - Arriba a la derecha de la tarjeta (pestaña **Mes**) hay un selector: «Últimos 18 meses» (lo de
+    siempre, por defecto), «Últimos 12 meses» y un botón por cada año con datos (2025, 2026…).
+    Al elegir un año se ven solo los meses de ese año (el actual, hasta el último mes). Sin
+    «Últimos 18 meses» si hay 12 meses de datos o menos.
+  - Es el mismo gráfico del autor con los mismos colores; solo cambian los meses. La elección se
+    mantiene al cambiar de mes en la pestaña, pero vuelve a «Últimos 18 meses» al recargar la página.
+  - Nuevo gancho en mi núcleo: `Mods.registra({ mes(meses) {…} })` (como `ficha` y `resumen`).
 
 ## Pendiente (ideas)
 - Más cambios visuales: colores y textos.

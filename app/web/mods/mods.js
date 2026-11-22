@@ -4,16 +4,16 @@
    Archivo propio (no es del autor original). El código del autor solo tiene:
      - index.html: "mods/mods.js" en la lista de scripts del cargador,
      - app.js: una línea al pintar la pestaña de un producto, que llama a
-       Mods.ficha(producto, color), y otra al pintar «Rendimiento», que llama a
-       Mods.resumen(productos, color).
+       Mods.ficha(producto, color), otra al pintar «Rendimiento», que llama a
+       Mods.resumen(productos, color), y otra al pintar «Mes», que llama a Mods.mes(meses).
    Todas marcadas con [mod]. Este archivo:
      1. carga los scripts de cada apartado (lista ARCHIVOS, en ese orden),
-     2. reparte esas dos llamadas entre los apartados,
+     2. reparte esas tres llamadas entre los apartados,
      3. da utilidades comunes en Mods.util.
 
    Para añadir un apartado nuevo: crea su .js en esta carpeta, que llame a
-   Mods.registra({ ficha(p, color) {...}, resumen(todos, color) {...} })
-   (las dos son opcionales), y añádelo a ARCHIVOS.
+   Mods.registra({ ficha(p, color) {...}, resumen(todos, color) {...}, mes(meses) {...} })
+   (las tres son opcionales), y añádelo a ARCHIVOS.
 
    En la web exportada («Compartir») no se carga: allí no hay servidor.
    ============================================================ */
@@ -27,6 +27,7 @@
     "empresa/dividendos.js",   // nivel 1: dividendos, splits y 52 semanas
     "empresa/cifras.js",       // nivel 2: la empresa en cifras
     "empresa/analistas.js",    // nivel 3: analistas
+    "filtro_esfuerzo.js",      // filtro de años en «Tu esfuerzo y el del mercado» (pestaña Mes)
   ];
 
   /* ---------------------------------------------- utilidades comunes */
@@ -114,9 +115,10 @@
   function registra(ap) {
     apartados.push(ap);
     // app.js puede haber pintado antes de que llegara este apartado: se pinta ahora lo pendiente.
-    const f = window.MODS_FICHA, r = window.MODS_RESUMEN;
+    const f = window.MODS_FICHA, r = window.MODS_RESUMEN, m = window.MODS_MES;
     if (f && visible("fondos")) llama(ap, "ficha", f);
     if (r && visible("rendimiento")) llama(ap, "resumen", r);
+    if (m && visible("mes")) llama(ap, "mes", m);
   }
 
   function ficha(p, color) {
@@ -128,8 +130,12 @@
     apartados.forEach(ap => llama(ap, "resumen", [todos, color]));
   }
 
+  function mes(meses) {
+    apartados.forEach(ap => llama(ap, "mes", [meses]));
+  }
+
   window.Mods = {
-    registra, ficha, resumen,
+    registra, ficha, resumen, mes,
     util: { $, escH, visible, seccion, oculta, fuente, tablaOrdenable, fichaActual: () => fichaActual },
   };
   const pend = window.MODS_FICHA;
