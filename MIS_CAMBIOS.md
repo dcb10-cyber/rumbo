@@ -280,6 +280,13 @@ del autor lleva `[mod]` (necesita git y el remoto «upstream»; si no, se salta)
     decidiendo «Ver todo» / «Solo largo plazo»). La elección se mantiene al cambiar de pestaña,
     pero se pierde al recargar la página.
   - Nuevo gancho en mi núcleo: `Mods.registra({ componentes(lista) {…} })`.
+  - Multiselección: se pueden marcar varios tipos a la vez (por ejemplo, Acciones y Cripto). Pulsar un
+    tipo marcado lo desmarca; «Todos» quita todas las marcas. «6 de 20» cuenta lo de todos los marcados.
+  - Los botones del filtro llevan ahora 4 px de separación, para que dos marcados seguidos no se
+    vean pegados (mismo estilo de siempre).
+  - Retoque: el tipo «Préstamos P2P / crowdfunding» sale en el filtro como «Crowdfunding», y se
+    esconde el texto «Pulsa uno para abrir su ficha completa» del título (lo hace el propio mod,
+    sin tocar nada del autor).
 
 ## Pendiente (ideas)
 - Completar el bruto y las retenciones de los dividendos antiguos (o importarlos de BD_DIV del Excel).

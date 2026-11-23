@@ -4,8 +4,10 @@
    Archivo propio (no es del autor original). En la pestaña «Patrimonio», arriba a la derecha de
    «Componentes de la cartera», añade:
      - un filtro por tipo de activo (Todos, Acciones, ETF, Fondos, Cripto…; solo salen los tipos
-       que tienes), para ver solo ese tipo de tarjetas,
+       que tienes). Se pueden marcar varios a la vez (Acciones y Cripto, por ejemplo); pulsar uno
+       marcado lo desmarca y «Todos» quita todas las marcas,
      - un selector de orden: valor, rentabilidad %, ganancia en € o nombre.
+   También esconde el texto «Pulsa uno para abrir su ficha completa» del título.
    No cambia las tarjetas: solo esconde las que no tocan y las reordena. No afecta a los gráficos
    ni a los totales (eso lo siguen decidiendo los botones de arriba, «Ver todo» / «Solo largo plazo»).
    La elección se mantiene mientras la página siga abierta.
@@ -23,7 +25,7 @@
   const TIPOS = [
     ["accion", "Acciones"], ["etf", "ETF"], ["fondo", "Fondos"], ["pension", "Pensiones"], ["bono", "Bonos"],
     ["cripto", "Cripto"], ["commodity", "Materias primas"], ["efectivo", "Efectivo"], ["inmueble", "Inmuebles"],
-    ["p2p", "P2P"], ["deuda", "Deudas"], ["otro", "Otros"],
+    ["p2p", "Crowdfunding"], ["deuda", "Deudas"], ["otro", "Otros"],
   ];
 
   const aportado = p => (p.aportado != null && p.aportado > 0 ? p.aportado : null);
@@ -38,7 +40,7 @@
     { k: "nombre", t: "Nombre (A-Z)", f: p => String(p.corto || p.nombre || "").toLowerCase(), dir: 1, texto: true },
   ];
 
-  let tipo = "todos";
+  const tipos = new Set();   // los tipos marcados; vacío = «Todos»
   let orden = "original";
   let ultima = [];
 
@@ -48,6 +50,7 @@
     st.textContent = `
       .modComp{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin-left:auto}
       .modComp .cuenta{font-size:12px;color:var(--tinta3);white-space:nowrap}
+      .modComp .segm{gap:4px;padding:3px}
       .modComp .segm button small{margin-left:5px;font-size:11px;opacity:.6}
       .modComp select{appearance:none;-webkit-appearance:none;font:inherit;font-size:12.5px;color:var(--tinta);cursor:pointer;
         background:var(--sup2) var(--flecha) no-repeat right 10px center;border:1px solid var(--borde);border-radius:9px;
@@ -63,6 +66,8 @@
     const cab = sec && sec.querySelector("header");
     if (!cab) return;
     ultima = lista;
+    const pista = cab.querySelector(".subt");   // «Pulsa uno para abrir su ficha completa»: fuera
+    if (pista) pista.style.display = "none";
 
     // Cada tarjeta con su producto. Las que acaba de pintar app.js salen en el mismo orden que la
     // lista; si ya las hemos movido nosotros, van marcadas.
@@ -77,8 +82,8 @@
     // Los tipos que hay, en su orden.
     const cuantos = {};
     filas.forEach(x => { const k = x.p.tipoClave || "otro"; cuantos[k] = (cuantos[k] || 0) + 1; });
-    const tipos = TIPOS.filter(([k]) => cuantos[k]);
-    if (tipo !== "todos" && !cuantos[tipo]) tipo = "todos";
+    const hay = TIPOS.filter(([k]) => cuantos[k]);
+    [...tipos].forEach(k => { if (!cuantos[k]) tipos.delete(k); });   // un tipo que ya no existe
     if (!ORDENES.some(o => o.k === orden)) orden = "original";
 
     // Controles (se crean una vez; se rellenan cada vez).
@@ -95,15 +100,20 @@
     cuenta.className = "cuenta";
     ctl.appendChild(cuenta);
 
-    if (tipos.length > 1) {
+    if (hay.length > 1) {
       const seg = document.createElement("div");
       seg.className = "segm";
-      [["todos", "Todos", filas.length], ...tipos.map(([k, t]) => [k, t, cuantos[k]])].forEach(([k, t, n]) => {
+      [["todos", "Todos", filas.length], ...hay.map(([k, t]) => [k, t, cuantos[k]])].forEach(([k, t, n]) => {
         const b = document.createElement("button");
         b.type = "button";
         b.innerHTML = `${t}<small>${n}</small>`;
-        b.setAttribute("aria-pressed", String(k === tipo));
-        b.onclick = () => { tipo = k; pinta(ultima); };
+        b.setAttribute("aria-pressed", String(k === "todos" ? tipos.size === 0 : tipos.has(k)));
+        b.onclick = () => {
+          if (k === "todos") tipos.clear();                       // «Todos» quita las marcas
+          else if (tipos.has(k)) tipos.delete(k);                 // pulsar uno marcado lo desmarca
+          else tipos.add(k);                                      // y pulsar otro lo suma
+          pinta(ultima);
+        };
         seg.appendChild(b);
       });
       ctl.appendChild(seg);
@@ -135,7 +145,7 @@
     }
     let visibles = 0;
     vista.forEach(x => {
-      const ok = tipo === "todos" || (x.p.tipoClave || "otro") === tipo;
+      const ok = tipos.size === 0 || tipos.has(x.p.tipoClave || "otro");
       x.chip.style.display = ok ? "" : "none";
       if (ok) visibles++;
       cont.appendChild(x.chip);
