@@ -57,6 +57,7 @@ siempre basta con quedarse con las dos partes (lo del autor y la línea `[mod]`)
 | `app/web/app.js` | 2 líneas al final de `pintaMes()`: `Mods.mes(...)` | filtro de años del gráfico de la pestaña «Mes» |
 | `app/web/app.js` | 1 línea antes de `const estado`: `D.vivo = null` | quita el precio en vivo (pastilla «Bitcoin en vivo») |
 | `app/web/app.js` | 2 líneas al final de `pintaChips()`: `Mods.componentes(...)` | filtro y orden de «Componentes de la cartera» |
+| `app/web/graficos.js` | 3 líneas en `donut()` | anillo con un solo elemento y importe centrado |
 | `app/web/index.html` | `"mods/mods.js"` en la lista de scripts del cargador | carga la parte del navegador |
 | `app/web/index.html` | `--s13` en los dos temas | color negro |
 | `app/web/index.html` | `.prog{…}`: quitado `max-width:760px` | barra de progreso a todo el ancho |
@@ -287,6 +288,14 @@ del autor lleva `[mod]` (necesita git y el remoto «upstream»; si no, se salta)
   - Retoque: el tipo «Préstamos P2P / crowdfunding» sale en el filtro como «Crowdfunding», y se
     esconde el texto «Pulsa uno para abrir su ficha completa» del título (lo hace el propio mod,
     sin tocar nada del autor).
+
+- **23/11/2026 · Gráficos de anillo: un solo elemento e importe centrado** (`graficos.js`, 3 líneas `[mod]`).
+  - Con un solo elemento (por ejemplo «Por divisa del producto», con todo en EUR) el anillo salía
+    vacío: una vuelta entera es un arco que empieza y acaba en el mismo punto y el navegador no lo
+    dibuja. Ahora se dibuja completo. Pasaba igual en «Distribución» de Patrimonio.
+  - Cuando el anillo no lleva título (los tres de «Ingr. Pasivos»), el importe del centro quedaba
+    unos 20 px por debajo; ahora está justo en el centro. Los de Patrimonio, que llevan título
+    («Total») encima del importe, se quedan como estaban.
 
 ## Pendiente (ideas)
 - Completar el bruto y las retenciones de los dividendos antiguos (o importarlos de BD_DIV del Excel).

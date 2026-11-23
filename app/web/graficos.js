@@ -522,7 +522,7 @@
     let ang = -Math.PI / 2;
     const arcos = [];
     datos.forEach((d, i) => {
-      const barrido = (d.valor / total) * Math.PI * 2;
+      const barrido = Math.min((d.valor / total) * Math.PI * 2, Math.PI * 2 - 0.0001);  // [mod] con un solo elemento, la vuelta entera no se dibujaba
       const a0 = ang, a1 = ang + barrido;
       const grande = barrido > Math.PI ? 1 : 0;
       const p = (r, a) => `${(cx + r * Math.cos(a)).toFixed(2)} ${(cy + r * Math.sin(a)).toFixed(2)}`;
@@ -533,8 +533,8 @@
       ang = a1;
     });
     const centro = el("g", { class: "donutCentro" });
-    centro.appendChild(txt(cx, cy - 4, cfg.tituloCentro || "", "donutEtiqueta", { "text-anchor": "middle" }));
-    centro.appendChild(txt(cx, cy + 20, cfg.valorCentro || fmtEurCorto(total), "donutValor", { "text-anchor": "middle" }));
+    if (cfg.tituloCentro) centro.appendChild(txt(cx, cy - 4, cfg.tituloCentro, "donutEtiqueta", { "text-anchor": "middle" }));  // [mod] sin título no se dibuja la línea vacía
+    centro.appendChild(txt(cx, cfg.tituloCentro ? cy + 20 : cy, cfg.valorCentro || fmtEurCorto(total), "donutValor", { "text-anchor": "middle", dy: cfg.tituloCentro ? null : ".35em" }));  // [mod] sin título, el importe va justo en el centro del anillo
     svg.appendChild(centro);
     cont.appendChild(svg);
 
