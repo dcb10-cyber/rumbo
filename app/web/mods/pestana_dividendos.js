@@ -313,11 +313,18 @@
     };
     const filas = anos.slice().reverse().map(a => {
       const i = anos.indexOf(a);
-      const vAnt = i > 0 ? totales[i - 1] : 0;
-      const v = a === ano ? null : varia(totales[i], vAnt);
-      return `<tr><td>${a}${a === ano ? " *" : ""}</td>${tabla[a].map(celda).join("")}
+      // Año en curso: lo cobrado hasta hoy frente al TOTAL del año anterior (va subiendo hasta alcanzarlo).
+      // Años cerrados: año completo frente al anterior completo.
+      const enCurso = a === ano;
+      const ant = String(+a - 1);
+      const vAnt = i === 0 ? 0 : totales[i - 1];
+      const v = varia(totales[i], vAnt);
+      const titulo = i === 0 ? "No hay año anterior con el que comparar"
+        : enCurso ? `Llevas ${G.fmtEur(totales[i], 0)} este año frente a ${G.fmtEur(vAnt, 0)} acumulados en todo ${ant}`
+        : `${G.fmtEur(totales[i], 0)} frente a ${G.fmtEur(vAnt, 0)} en ${ant}`;
+      return `<tr><td>${a}${enCurso ? " *" : ""}</td>${tabla[a].map(celda).join("")}
         <td class="tot">${G.fmtEur(totales[i], 0)}</td>
-        <td class="${clsVar(v)}">${pctS(v)}</td></tr>`;
+        <td class="${clsVar(v)}" title="${escH(titulo)}">${pctS(v)}</td></tr>`;
     }).join("");
     const mediaMes = MESES.map((_, m) => {
       const completos = anos.filter(a => a !== ano);
@@ -325,7 +332,7 @@
     });
     $("#dmodTablaCalor").innerHTML =
       `<thead><tr><th>Año</th>${MESES.map(m => `<th>${m}</th>`).join("")}<th>Total</th>
-        <th title="Frente al año anterior completo">vs año ant.</th></tr></thead>
+        <th title="Frente al total del año anterior. En el año en curso va avanzando según cobras">vs año ant.</th></tr></thead>
        <tbody>${filas}</tbody>` +
       (anos.length > 2 ? `<tfoot><tr><td title="Media de los años completos">Media</td>${mediaMes.map(v =>
         `<td>${v ? G.fmtEur(v, 0) : "—"}</td>`).join("")}<td>${G.fmtEur(sum(mediaMes.map(v => v || 0)), 0)}</td><td></td></tr></tfoot>` : "");

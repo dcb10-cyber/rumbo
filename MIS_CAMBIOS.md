@@ -26,6 +26,7 @@ app/web/mods/                  ← lo mío, parte del navegador (JavaScript)
     comun.js                       estilos (clases emod…) y formatos comunes
     dividendos.js / cifras.js / analistas.js   un archivo por apartado
   filtro_esfuerzo.js             filtro de años en «Tu esfuerzo y el del mercado» (pestaña Mes)
+  filtro_componentes.js          filtro por tipo y orden en «Componentes de la cartera» (pestaña Patrimonio)
   fiscal_dividendos.js           retenciones en el formulario de «Dividendo» + tabla de países y cuentas
   pestana_dividendos.js          pestaña «Ingr. Pasivos» (crea su botón y su panel)
   pestana_irpf.js                pestaña «IRPF»: retenciones e impuestos
@@ -55,6 +56,7 @@ siempre basta con quedarse con las dos partes (lo del autor y la línea `[mod]`)
 | `app/web/app.js` | 2 líneas después de `pintaDividendos()`: `Mods.resumen(...)` | apartados en «Rendimiento» |
 | `app/web/app.js` | 2 líneas al final de `pintaMes()`: `Mods.mes(...)` | filtro de años del gráfico de la pestaña «Mes» |
 | `app/web/app.js` | 1 línea antes de `const estado`: `D.vivo = null` | quita el precio en vivo (pastilla «Bitcoin en vivo») |
+| `app/web/app.js` | 2 líneas al final de `pintaChips()`: `Mods.componentes(...)` | filtro y orden de «Componentes de la cartera» |
 | `app/web/index.html` | `"mods/mods.js"` en la lista de scripts del cargador | carga la parte del navegador |
 | `app/web/index.html` | `--s13` en los dos temas | color negro |
 | `app/web/index.html` | `.prog{…}`: quitado `max-width:760px` | barra de progreso a todo el ancho |
@@ -262,6 +264,22 @@ del autor lleva `[mod]` (necesita git y el remoto «upstream»; si no, se salta)
     El gráfico es el del autor (`G.barrasAgrupadas`), que no deja cambiar la viñeta: el mod escucha el ratón en la
     misma zona después que él y reescribe el contenido y la posición (`vinetaPorProducto`).
   - Con «Todo» salen todos los años, uno al lado del otro, con la viñeta del autor como antes.
+
+- **22/11/2026 · «vs año ant.» del año en curso** (tabla «Año a año» de Ingr. Pasivos): ya no sale «—» hasta que
+  acabe el año. Compara lo que llevas cobrado este año con el TOTAL acumulado del año anterior entero (empieza en
+  -100 % y va subiendo según cobras; pasa a positivo cuando superas lo del año pasado) y lleva «del total 2025» al lado.
+  Los años cerrados siguen comparando año completo con año completo. Pasando el ratón se ven las dos cifras.
+
+- **23/11/2026 · Filtro por tipo y orden en «Componentes de la cartera»** (`filtro_componentes.js`).
+  - Arriba a la derecha de ese apartado (pestaña **Patrimonio**): botones «Todos / Acciones / ETF /
+    Fondos / Cripto / Efectivo…» (solo salen los tipos que tienes, cada uno con cuántos son) y un
+    desplegable para ordenar: orden original (por defecto), valor, rentabilidad %, ganancia en € (de
+    mayor a menor o al revés) y nombre A-Z. Los que no tienen el dato (por ejemplo, sin aportaciones
+    como «Trade Republic») van siempre al final. Si filtras, sale «6 de 20».
+  - Solo esconde y reordena las tarjetas: no cambia los gráficos ni los totales (eso lo siguen
+    decidiendo «Ver todo» / «Solo largo plazo»). La elección se mantiene al cambiar de pestaña,
+    pero se pierde al recargar la página.
+  - Nuevo gancho en mi núcleo: `Mods.registra({ componentes(lista) {…} })`.
 
 ## Pendiente (ideas)
 - Completar el bruto y las retenciones de los dividendos antiguos (o importarlos de BD_DIV del Excel).

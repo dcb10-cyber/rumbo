@@ -464,6 +464,8 @@
       cont.appendChild(b);
       G.mini(b.querySelector(".sp"), corta(p.serie), color(p));
     });
+    // [mod] Filtro por tipo y orden de las tarjetas: todo en web/mods/filtro_componentes.js
+    window.MODS_COMPONENTES = [enPanel()]; if (window.Mods) window.Mods.componentes(window.MODS_COMPONENTES[0]);  // [mod]
   }
 
   function pintaDistribucion() {

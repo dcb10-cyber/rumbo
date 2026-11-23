@@ -5,16 +5,17 @@
      - index.html: "mods/mods.js" en la lista de scripts del cargador,
      - app.js: una línea al pintar la pestaña de un producto, que llama a
        Mods.ficha(producto, color), otra al pintar «Rendimiento», que llama a
-       Mods.resumen(productos, color), y otra al pintar «Mes», que llama a Mods.mes(meses),
+       Mods.resumen(productos, color), otra al pintar «Mes», que llama a Mods.mes(meses), y otra al
+       pintar las tarjetas de «Componentes de la cartera», que llama a Mods.componentes(lista),
      - editor.js: una línea al abrir el formulario de un movimiento: Mods.formMovimiento(...).
    Todas marcadas con [mod]. Este archivo:
      1. carga los scripts de cada apartado (lista ARCHIVOS, en ese orden),
-     2. reparte esas tres llamadas entre los apartados,
+     2. reparte esas llamadas entre los apartados,
      3. da utilidades comunes en Mods.util.
 
    Para añadir un apartado nuevo: crea su .js en esta carpeta, que llame a
-   Mods.registra({ ficha(p, color) {...}, resumen(todos, color) {...}, mes(meses) {...} })
-   (las tres son opcionales), y añádelo a ARCHIVOS.
+   Mods.registra({ ficha(p, color) {...}, resumen(todos, color) {...}, mes(meses) {...},
+   componentes(lista) {...} }) (todas opcionales), y añádelo a ARCHIVOS.
 
    En la web exportada («Compartir») no se carga: allí no hay servidor.
    ============================================================ */
@@ -29,6 +30,7 @@
     "empresa/cifras.js",       // nivel 2: la empresa en cifras
     "empresa/analistas.js",    // nivel 3: analistas
     "filtro_esfuerzo.js",      // filtro de años en «Tu esfuerzo y el del mercado» (pestaña Mes)
+    "filtro_componentes.js",   // filtro por tipo y orden en «Componentes de la cartera» (pestaña Patrimonio)
     "fiscal_dividendos.js",    // retenciones en el formulario de «Dividendo» (y sus cuentas)
     "pestana_dividendos.js",   // pestaña «Ingr. Pasivos» (crea su propio botón y panel)
     "pestana_irpf.js",         // pestaña «IRPF»: retenciones e impuestos de esos cobros
@@ -207,10 +209,11 @@
   function registra(ap) {
     apartados.push(ap);
     // app.js puede haber pintado antes de que llegara este apartado: se pinta ahora lo pendiente.
-    const f = window.MODS_FICHA, r = window.MODS_RESUMEN, m = window.MODS_MES;
+    const f = window.MODS_FICHA, r = window.MODS_RESUMEN, m = window.MODS_MES, c = window.MODS_COMPONENTES;
     if (f && visible("fondos")) llama(ap, "ficha", f);
     if (r && visible("rendimiento")) llama(ap, "resumen", r);
     if (m && visible("mes")) llama(ap, "mes", m);
+    if (c && visible("patrimonio")) llama(ap, "componentes", c);
   }
 
   function ficha(p, color) {
@@ -226,13 +229,17 @@
     apartados.forEach(ap => llama(ap, "mes", [meses]));
   }
 
+  function componentes(lista) {
+    apartados.forEach(ap => llama(ap, "componentes", [lista]));
+  }
+
   // Lo llama editor.js (una línea [mod]) al abrir el formulario de un movimiento.
   function formMovimiento(f, m, nuevo, cfg) {
     apartados.forEach(ap => llama(ap, "formMovimiento", [f, m, nuevo, cfg]));
   }
 
   window.Mods = {
-    registra, ficha, resumen, mes, formMovimiento,
+    registra, ficha, resumen, mes, componentes, formMovimiento,
     util: { $, escH, visible, seccion, oculta, fuente, tablaOrdenable, pestana, cobros, hoy, fichaActual: () => fichaActual },
   };
   const pend = window.MODS_FICHA;
