@@ -157,7 +157,7 @@ class ConCaudal(ConCarpeta):
 
 def _sin_ids(x):
     if isinstance(x, dict):
-        return {k: _sin_ids(v) for k, v in x.items() if k not in ("id", "origen")}
+        return {k: _sin_ids(v) for k, v in x.items() if k not in ("id", "origen", "generado")}  # "generado" = hora del calculo: cambia de un segundo a otro
     if isinstance(x, list):
         return [_sin_ids(v) for v in x]
     return x

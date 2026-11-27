@@ -344,6 +344,13 @@ porque en un JSON no se pueden poner comentarios.
     panel y la misma Renta** de todos los años) y una prueba de punta a punta con las dos apps arrancadas y datos
     inventados: operaciones, unidades y saldos cuadran; 304 si nada cambia; sin conexión sigue con la última foto.
 
+- **27/11/2026 · Arreglos tras revisar el mod de Caudal.**
+  - Prueba `PanelIdentico` (test_mods_caudal.py): fallaba 1 de cada 3-4 veces porque comparaba la hora del
+    cálculo (`generado`) y a veces caía en segundos distintos. Ahora no la compara. 10 de 10 en verde.
+  - Carpeta `Claude outputs/` (copias que deja la app de Claude): lleva su propio `.gitignore` (`*`) para que
+    nunca se suba nada de ahí. El 27/11 se subió por error `Claude outputs/env` con claves: hay que borrarlo y cambiar las claves
+    cambiadas (llave de Rumbo en `mis_datos/.acceso` y token de Caudal).
+
 ## Pendiente (ideas)
 - Caudal todavía no tiene pantalla para apuntar compras, ventas ni dividendos (ni retenciones): hasta entonces,
   de Caudal solo llegarán los saldos de las cuentas que enlaces. Cuando la tenga, no hay que tocar nada aquí.
