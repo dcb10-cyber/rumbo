@@ -1149,6 +1149,8 @@ def api_diagnostico():
 # [mod] Mis añadidos: todo está en app/mods/ (cada mod añade sus propias rutas).
 from . import mods  # noqa: E402  [mod]
 mods.registra(app, lambda: cartera(), lambda: os.path.join(DATOS, "cache"))  # [mod]
+from .mods import caudal as _caudal  # [mod] capa de Caudal al leer la cartera
+cartera, cartera_todos = _caudal.envuelve(cartera, cartera_todos, modo, carpeta, perfiles, con_cartera)  # [mod]
 
 
 @app.get("/api/ping")

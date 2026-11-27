@@ -1,0 +1,441 @@
+{
+ "_descripcion": "Contrato v1 entre Caudal (publica) y Rumbo (lee). DATOS INVENTADOS. Cada apartado es la respuesta de una ruta: operaciones = GET /api/v1/inversion/operaciones, saldos = GET /api/v1/cuentas/saldos?corte=fin_mes, posiciones = GET /api/v1/inversion/posiciones. Esta copia es idéntica en los dos repositorios.",
+ "operaciones": {
+  "schema": 1,
+  "version": "2459fb71763281061c0ffe390d5115cd",
+  "operaciones": [
+   {
+    "id": "1001",
+    "tipo": "compra",
+    "fecha": "2026-02-03",
+    "activo": {
+     "id": 101,
+     "isin": "IE00B4L5Y983",
+     "ticker": "IWDA",
+     "nombre": "iShares Core MSCI World",
+     "tipo": "etf",
+     "divisa": "EUR"
+    },
+    "cuenta_id": 2,
+    "unidades": 10.0,
+    "bruto_eur": 1000.0,
+    "comision_eur": 1.5,
+    "neto_eur": 1001.5,
+    "ret_origen_eur": null,
+    "ret_es_eur": null,
+    "pais": null,
+    "convenio_pct": null,
+    "destino_activo_id": null,
+    "unidades_destino": null,
+    "nota": "Primera compra"
+   },
+   {
+    "id": "1002",
+    "tipo": "compra",
+    "fecha": "2026-02-10",
+    "activo": {
+     "id": 102,
+     "isin": null,
+     "ticker": "AAPL",
+     "nombre": "Apple Inc.",
+     "tipo": "accion",
+     "divisa": "USD"
+    },
+    "cuenta_id": 2,
+    "unidades": 40.0,
+    "bruto_eur": 6800.0,
+    "comision_eur": 1.0,
+    "neto_eur": 6801.0,
+    "ret_origen_eur": null,
+    "ret_es_eur": null,
+    "pais": null,
+    "convenio_pct": null,
+    "destino_activo_id": null,
+    "unidades_destino": null,
+    "nota": null
+   },
+   {
+    "id": "1003",
+    "tipo": "compra",
+    "fecha": "2026-02-15",
+    "activo": {
+     "id": 103,
+     "isin": "IE00BYX5NX33",
+     "ticker": null,
+     "nombre": "Fidelity MSCI World Index",
+     "tipo": "fondo",
+     "divisa": "EUR"
+    },
+    "cuenta_id": 2,
+    "unidades": 120.5,
+    "bruto_eur": 2000.0,
+    "comision_eur": 0.0,
+    "neto_eur": 2000.0,
+    "ret_origen_eur": null,
+    "ret_es_eur": null,
+    "pais": null,
+    "convenio_pct": null,
+    "destino_activo_id": null,
+    "unidades_destino": null,
+    "nota": null
+   },
+   {
+    "id": "1004",
+    "tipo": "compra",
+    "fecha": "2026-03-02",
+    "activo": {
+     "id": 105,
+     "isin": null,
+     "ticker": "SAN.MC",
+     "nombre": "Banco Santander",
+     "tipo": "accion",
+     "divisa": "EUR"
+    },
+    "cuenta_id": 2,
+    "unidades": 100.0,
+    "bruto_eur": 380.0,
+    "comision_eur": 2.0,
+    "neto_eur": 382.0,
+    "ret_origen_eur": null,
+    "ret_es_eur": null,
+    "pais": null,
+    "convenio_pct": null,
+    "destino_activo_id": null,
+    "unidades_destino": null,
+    "nota": null
+   },
+   {
+    "id": "1005",
+    "tipo": "dividendo",
+    "fecha": "2026-05-15",
+    "activo": {
+     "id": 102,
+     "isin": null,
+     "ticker": "AAPL",
+     "nombre": "Apple Inc.",
+     "tipo": "accion",
+     "divisa": "USD"
+    },
+    "cuenta_id": 2,
+    "unidades": 0.0,
+    "bruto_eur": 40.0,
+    "comision_eur": 0.0,
+    "neto_eur": 27.54,
+    "ret_origen_eur": 6.0,
+    "ret_es_eur": 6.46,
+    "pais": "US",
+    "convenio_pct": 15.0,
+    "destino_activo_id": null,
+    "unidades_destino": null,
+    "nota": "Dividendo de EE. UU.: 15 % en origen y 19 % en España"
+   },
+   {
+    "id": "1006",
+    "tipo": "interes",
+    "fecha": "2026-05-31",
+    "activo": null,
+    "cuenta_id": 3,
+    "unidades": 0.0,
+    "bruto_eur": 30.0,
+    "comision_eur": 0.0,
+    "neto_eur": 24.3,
+    "ret_origen_eur": 0.0,
+    "ret_es_eur": 5.7,
+    "pais": "ES",
+    "convenio_pct": null,
+    "destino_activo_id": null,
+    "unidades_destino": null,
+    "nota": "Intereses de la cuenta remunerada (19 %)"
+   },
+   {
+    "id": "1007",
+    "tipo": "venta",
+    "fecha": "2026-06-10",
+    "activo": {
+     "id": 101,
+     "isin": "IE00B4L5Y983",
+     "ticker": "IWDA",
+     "nombre": "iShares Core MSCI World",
+     "tipo": "etf",
+     "divisa": "EUR"
+    },
+    "cuenta_id": 2,
+    "unidades": 4.0,
+    "bruto_eur": 440.0,
+    "comision_eur": 1.0,
+    "neto_eur": 439.0,
+    "ret_origen_eur": null,
+    "ret_es_eur": null,
+    "pais": null,
+    "convenio_pct": null,
+    "destino_activo_id": null,
+    "unidades_destino": null,
+    "nota": "Venta parcial"
+   },
+   {
+    "id": "1008",
+    "tipo": "comision",
+    "fecha": "2026-06-30",
+    "activo": {
+     "id": 101,
+     "isin": "IE00B4L5Y983",
+     "ticker": "IWDA",
+     "nombre": "iShares Core MSCI World",
+     "tipo": "etf",
+     "divisa": "EUR"
+    },
+    "cuenta_id": 2,
+    "unidades": 0.0,
+    "bruto_eur": 0.0,
+    "comision_eur": 2.5,
+    "neto_eur": 2.5,
+    "ret_origen_eur": null,
+    "ret_es_eur": null,
+    "pais": null,
+    "convenio_pct": null,
+    "destino_activo_id": null,
+    "unidades_destino": null,
+    "nota": "Custodia"
+   },
+   {
+    "id": "1009",
+    "tipo": "traspaso",
+    "fecha": "2026-07-01",
+    "activo": {
+     "id": 103,
+     "isin": "IE00BYX5NX33",
+     "ticker": null,
+     "nombre": "Fidelity MSCI World Index",
+     "tipo": "fondo",
+     "divisa": "EUR"
+    },
+    "cuenta_id": null,
+    "unidades": 120.5,
+    "bruto_eur": 2100.0,
+    "comision_eur": 0.0,
+    "neto_eur": 2100.0,
+    "ret_origen_eur": null,
+    "ret_es_eur": null,
+    "pais": null,
+    "convenio_pct": null,
+    "destino_activo_id": 104,
+    "unidades_destino": 150.25,
+    "nota": "Traspaso entre fondos"
+   },
+   {
+    "id": "1010",
+    "tipo": "ajuste",
+    "fecha": "2026-08-01",
+    "activo": {
+     "id": 105,
+     "isin": null,
+     "ticker": "SAN.MC",
+     "nombre": "Banco Santander",
+     "tipo": "accion",
+     "divisa": "EUR"
+    },
+    "cuenta_id": null,
+    "unidades": 100.0,
+    "bruto_eur": 0.0,
+    "comision_eur": 0.0,
+    "neto_eur": 0.0,
+    "ret_origen_eur": null,
+    "ret_es_eur": null,
+    "pais": null,
+    "convenio_pct": null,
+    "destino_activo_id": null,
+    "unidades_destino": null,
+    "nota": "Split 2 por 1"
+   },
+   {
+    "id": "1011",
+    "tipo": "dividendo",
+    "fecha": "2026-09-01",
+    "activo": {
+     "id": 105,
+     "isin": null,
+     "ticker": "SAN.MC",
+     "nombre": "Banco Santander",
+     "tipo": "accion",
+     "divisa": "EUR"
+    },
+    "cuenta_id": 2,
+    "unidades": 0.0,
+    "bruto_eur": 20.0,
+    "comision_eur": 0.0,
+    "neto_eur": 16.2,
+    "ret_origen_eur": 0.0,
+    "ret_es_eur": 3.8,
+    "pais": "ES",
+    "convenio_pct": null,
+    "destino_activo_id": null,
+    "unidades_destino": null,
+    "nota": null
+   },
+   {
+    "id": "1012",
+    "tipo": "compra",
+    "fecha": "2026-10-05",
+    "activo": {
+     "id": 101,
+     "isin": "IE00B4L5Y983",
+     "ticker": "IWDA",
+     "nombre": "iShares Core MSCI World",
+     "tipo": "etf",
+     "divisa": "EUR"
+    },
+    "cuenta_id": 2,
+    "unidades": 2.0,
+    "bruto_eur": 210.0,
+    "comision_eur": 0.0,
+    "neto_eur": 210.0,
+    "ret_origen_eur": null,
+    "ret_es_eur": null,
+    "pais": null,
+    "convenio_pct": null,
+    "destino_activo_id": null,
+    "unidades_destino": null,
+    "nota": null
+   },
+   {
+    "id": "1013",
+    "tipo": "dividendo",
+    "fecha": "2026-11-02",
+    "activo": {
+     "id": 105,
+     "isin": null,
+     "ticker": "SAN.MC",
+     "nombre": "Banco Santander",
+     "tipo": "accion",
+     "divisa": "EUR"
+    },
+    "cuenta_id": 2,
+    "unidades": 0.0,
+    "bruto_eur": 12.0,
+    "comision_eur": 0.0,
+    "neto_eur": 12.0,
+    "ret_origen_eur": null,
+    "ret_es_eur": null,
+    "pais": null,
+    "convenio_pct": null,
+    "destino_activo_id": null,
+    "unidades_destino": null,
+    "nota": "Sin datos fiscales"
+   }
+  ]
+ },
+ "saldos": {
+  "schema": 1,
+  "version": "e0fdc2a4352e79b7a43d2f82407cc7fd",
+  "cuentas": [
+   {
+    "id": 1,
+    "nombre": "Cuenta nómina",
+    "tipo": "banco"
+   },
+   {
+    "id": 2,
+    "nombre": "Bróker",
+    "tipo": "broker"
+   },
+   {
+    "id": 3,
+    "nombre": "Cuenta remunerada",
+    "tipo": "banco"
+   },
+   {
+    "id": 4,
+    "nombre": "Préstamo coche",
+    "tipo": "pasivo"
+   }
+  ],
+  "saldos": [
+   {
+    "cuenta_id": 1,
+    "fecha": "2026-09-30",
+    "saldo_eur": 2500.0
+   },
+   {
+    "cuenta_id": 1,
+    "fecha": "2026-10-31",
+    "saldo_eur": 2650.4
+   },
+   {
+    "cuenta_id": 1,
+    "fecha": "2026-11-20",
+    "saldo_eur": 2480.15
+   },
+   {
+    "cuenta_id": 2,
+    "fecha": "2026-09-30",
+    "saldo_eur": 310.55
+   },
+   {
+    "cuenta_id": 2,
+    "fecha": "2026-10-31",
+    "saldo_eur": 100.55
+   },
+   {
+    "cuenta_id": 2,
+    "fecha": "2026-11-20",
+    "saldo_eur": 112.55
+   },
+   {
+    "cuenta_id": 3,
+    "fecha": "2026-09-30",
+    "saldo_eur": 10024.3
+   },
+   {
+    "cuenta_id": 3,
+    "fecha": "2026-10-31",
+    "saldo_eur": 10024.3
+   },
+   {
+    "cuenta_id": 3,
+    "fecha": "2026-11-20",
+    "saldo_eur": 10024.3
+   },
+   {
+    "cuenta_id": 4,
+    "fecha": "2026-09-30",
+    "saldo_eur": 8000.0
+   },
+   {
+    "cuenta_id": 4,
+    "fecha": "2026-10-31",
+    "saldo_eur": 7800.0
+   },
+   {
+    "cuenta_id": 4,
+    "fecha": "2026-11-20",
+    "saldo_eur": 7650.0
+   }
+  ]
+ },
+ "posiciones": {
+  "schema": 1,
+  "version": "86a9eb0369f138ffcca9d77052bb1bea",
+  "posiciones": [
+   {
+    "activo_id": 101,
+    "unidades": 8.0
+   },
+   {
+    "activo_id": 102,
+    "unidades": 40.0
+   },
+   {
+    "activo_id": 103,
+    "unidades": 0.0
+   },
+   {
+    "activo_id": 104,
+    "unidades": 150.25
+   },
+   {
+    "activo_id": 105,
+    "unidades": 200.0
+   }
+  ]
+ }
+}

@@ -13,6 +13,8 @@ sus actualizaciones, como mucho choca esa línea.
       pestana_dividendos.py  pestaña «Ingr. Pasivos»: todos los cobros uno a uno
       fiscal_dividendos.py   retenciones de cada dividendo (lo llama almacen.py)
       irpf.py                pestaña «IRPF»: las ventas de todos los años
+      caudal/                Caudal → Rumbo: lo que anotas en Caudal sale aquí (capa al leer la
+                             cartera, con sus propias dos líneas [mod] en servidor.py)
 
 La parte del navegador está en app/web/mods/ (misma idea, mismo orden).
 
@@ -20,9 +22,9 @@ Para añadir un mod nuevo: crea su módulo o carpeta aquí, con una función
 registra(app, cartera, carpeta_cache), y añádelo a MODS.
 """
 
-from . import empresa, irpf, pestana_dividendos
+from . import caudal, empresa, irpf, pestana_dividendos
 
-MODS = [empresa, pestana_dividendos, irpf]
+MODS = [empresa, pestana_dividendos, irpf, caudal]
 
 
 def registra(app, cartera, carpeta_cache):

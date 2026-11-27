@@ -390,7 +390,8 @@ class Estructura(unittest.TestCase):
     def test_lo_tocado_del_autor_lleva_mod(self):
         """Cada línea añadida en un archivo del autor tiene que llevar [mod] (para encontrarla
         si choca al traer una actualización). Necesita git y el remoto «upstream»."""
-        mios = ("app/mods/", "app/web/mods/", "tests/test_mods_", "MIS_CAMBIOS.md")
+        mios = ("app/mods/", "app/web/mods/", "tests/test_mods_", "MIS_CAMBIOS.md",
+                "tests/datos/caudal_contrato_v1.json", "caudal.ejemplo.json")   # mod de Caudal (JSON: sin comentarios)
         try:
             r = subprocess.run(["git", "diff", "-U0", "upstream/main", "--", "."], cwd=RAIZ,
                                capture_output=True, text=True, encoding="utf-8", timeout=30)

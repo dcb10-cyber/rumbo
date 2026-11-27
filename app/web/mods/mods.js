@@ -34,6 +34,7 @@
     "fiscal_dividendos.js",    // retenciones en el formulario de «Dividendo» (y sus cuentas)
     "pestana_dividendos.js",   // pestaña «Ingr. Pasivos» (crea su propio botón y panel)
     "pestana_irpf.js",         // pestaña «IRPF»: retenciones e impuestos de esos cobros
+    "caudal.js",               // Caudal → Rumbo: pastilla, candados 🔒 y pestaña «Caudal»
   ];
 
   /* ---------------------------------------------- utilidades comunes */

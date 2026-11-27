@@ -20,6 +20,12 @@ app/mods/                      ← lo mío, parte del servidor (Python)
     dividendos.py                  nivel 1  →  /api/empresa-mod
     cifras.py                      nivel 2  →  /api/empresa-mod/cifras
     analistas.py                   nivel 3  →  /api/empresa-mod/analistas
+  caudal/                        Caudal → Rumbo (tú anotas en Caudal y Rumbo lo enseña)
+    __init__.py                    registra(app, …) y envuelve(…) (lo usan las 2 líneas [mod] de servidor.py)
+    cliente.py                     habla con Caudal: urllib, solo lectura, token, ETag, sin redirecciones
+    traductor.py                   operaciones de Caudal → movimientos de Rumbo, enlaces y validación todo o nada
+    capa.py                        mis_datos/caudal.json, la foto (mis_datos/caudal/<perfil>.json) y la capa
+    rutas.py                       /api/caudal-mod/sincronizar, /estado, /enlazar y el portero (409)
 app/web/mods/                  ← lo mío, parte del navegador (JavaScript)
   mods.js                        núcleo: carga los demás y reparte las llamadas de app.js
   empresa/
@@ -30,9 +36,13 @@ app/web/mods/                  ← lo mío, parte del navegador (JavaScript)
   fiscal_dividendos.js           retenciones en el formulario de «Dividendo» + tabla de países y cuentas
   pestana_dividendos.js          pestaña «Ingr. Pasivos» (crea su botón y su panel)
   pestana_irpf.js                pestaña «IRPF»: retenciones e impuestos
+  caudal.js                      pastilla «Caudal ✓», candados 🔒 en Mis datos y pestaña «Caudal» (enlaces)
 tests/test_mods_empresa.py     ← mis pruebas (sin internet)
 tests/test_mods_dividendos.py
 tests/test_mods_irpf.py
+tests/test_mods_caudal.py        (Caudal simulado con el contrato: nunca sale a la red)
+tests/datos/caudal_contrato_v1.json   contrato con Caudal (datos inventados; copia idéntica del de Caudal)
+caudal.ejemplo.json            ← plantilla de mis_datos/caudal.json (sin token real)
 ```
 
 **Para añadir una pestaña nueva**: `Mods.util.pestana({ id, texto, despuesDe, pinta(panel) })` (en
@@ -52,6 +62,7 @@ siempre basta con quedarse con las dos partes (lo del autor y la línea `[mod]`)
 | Archivo | Qué | Para |
 |---|---|---|
 | `app/servidor.py` | 3 líneas antes de `/api/ping`: `mods.registra(...)` | todas las rutas de mis mods |
+| `app/servidor.py` | 2 líneas justo debajo de `mods.registra(...)`: `from .mods import caudal as _caudal` y `cartera, cartera_todos = _caudal.envuelve(...)` | la capa de Caudal al leer la cartera (panel, Renta, unidades, exportar y mods) |
 | `app/web/app.js` | 2 líneas al final de `pintaFondos()`: `Mods.ficha(...)` | apartados en la pestaña del producto |
 | `app/web/app.js` | 2 líneas después de `pintaDividendos()`: `Mods.resumen(...)` | apartados en «Rendimiento» |
 | `app/web/app.js` | 2 líneas al final de `pintaMes()`: `Mods.mes(...)` | filtro de años del gráfico de la pestaña «Mes» |
@@ -69,7 +80,9 @@ siempre basta con quedarse con las dos partes (lo del autor y la línea `[mod]`)
 | `app/web/editor.js` | 2 líneas: 13 colores en el selector | color negro |
 
 La prueba `test_lo_tocado_del_autor_lleva_mod` comprueba que toda línea añadida en un archivo
-del autor lleva `[mod]` (necesita git y el remoto «upstream»; si no, se salta).
+del autor lleva `[mod]` (necesita git y el remoto «upstream»; si no, se salta). Los dos JSON del mod de
+Caudal (`tests/datos/caudal_contrato_v1.json` y `caudal.ejemplo.json`) están en su lista de archivos míos,
+porque en un JSON no se pueden poner comentarios.
 
 ## Hecho
 - **22/11/2026 · Color negro en la paleta de productos** (color nº 13).
@@ -297,7 +310,44 @@ del autor lleva `[mod]` (necesita git y el remoto «upstream»; si no, se salta)
     unos 20 px por debajo; ahora está justo en el centro. Los de Patrimonio, que llevan título
     («Total») encima del importe, se quedan como estaban.
 
+- **27/11/2026 · Caudal → Rumbo: tú solo anotas en Caudal y Rumbo lo enseña todo** (`app/mods/caudal/`, `caudal.js`).
+  - **Caudal manda; Rumbo solo lee** (nunca al revés). Rumbo pide a Caudal sus tres rutas de lectura (operaciones,
+    saldos a fin de mes y posiciones) con un token de solo lectura y se trae la **foto completa** de lo de Caudal.
+  - La foto **no se escribe en cartera.json**: va en `mis_datos/caudal/<perfil>.json` (escritura atómica) y se
+    **superpone al leer** la cartera. Motivos: el formulario borra los campos extra al editar, `cambia()` escribe
+    en el perfil activo y cada guardado gasta una de las 20 copias automáticas. Dos líneas `[mod]` en servidor.py.
+  - Traducción: compra (importe = bruto + comisión), venta (bruto − comisión), dividendo (neto + retenciones si
+    Caudal las trae, con las mismas claves `fis_*` del formulario), interés (dividendo del producto enlazado a la
+    cuenta, país ES), comisión, traspaso, ajuste (Caudal dice cuántas cambian; Rumbo guarda las que tienes) y
+    saldos → valores anotados de las cuentas enlazadas (gana el de Caudal si hay uno tuyo el mismo día).
+    Ids estables `c<id de Caudal>` (y `cv…` los saldos), `origen: "caudal"`. Solo entra lo de fecha ≥ «desde».
+  - **Todo o nada**: cada operación pasa por `almacen.guarda_movimiento` (las mismas comprobaciones que el
+    formulario) en una copia en memoria, en el orden de Rumbo. Si una falla (p. ej. vender más de lo que tienes),
+    se queda la foto anterior y se enseña el error con fecha, activo y motivo.
+  - **Enlaces**: activo → producto automático por ISIN (identificador o expoComo) y luego por código/ticker; si
+    no, a mano en la pestaña «Caudal». Cuenta → producto solo a mano y solo con productos efectivo o deuda. Lo no
+    enlazado sale en «Pendiente de enlazar» y sus operaciones no entran (con aviso).
+  - **Portero** (detrás de la seguridad del autor): 409 «Este movimiento viene de Caudal: edítalo allí» al editar o
+    borrar un `c…`; 409 con explicación al anotar a mano compra, venta, dividendo o comisión de un producto
+    enlazado con fecha ≥ desde, al importar sobre ellos o al crear aportaciones periódicas. Solo con la
+    sincronización activa.
+  - **Conciliación**: las unidades de cada producto enlazado (lo tuyo + lo de Caudal) se comparan con las
+    posiciones de Caudal y se avisa de lo que no cuadra.
+  - **Navegador**: pastilla en la cabecera («Caudal ✓ 27/11 10:40», «Caudal sin conexión», «N pendientes de
+    enlazar») con «Sincronizar ahora»; sincroniza al abrir y al volver a la pestaña (si pasó más de 1 minuto); si
+    hay datos nuevos recarga, o avisa si tienes un formulario abierto. En Mis datos, lo de Caudal sale con 🔒 y sin
+    Editar/Borrar. Pestaña nueva **«Caudal»** (después de Mis datos) con el estado, errores, pendientes, enlaces y
+    conciliación. Sin hilos en segundo plano: al arrancar, Rumbo usa la última foto guardada.
+  - Configuración: `mis_datos/caudal.json` (plantilla en `caudal.ejemplo.json`). Sin archivo, o con
+    `"activo": false`, el mod no hace nada. Para quitarlo del todo, borra también `mis_datos/caudal/`.
+  - Comprobado: 30 pruebas nuevas (entre ellas, que la cartera de ejemplo pasada entera por Caudal da **el mismo
+    panel y la misma Renta** de todos los años) y una prueba de punta a punta con las dos apps arrancadas y datos
+    inventados: operaciones, unidades y saldos cuadran; 304 si nada cambia; sin conexión sigue con la última foto.
+
 ## Pendiente (ideas)
+- Caudal todavía no tiene pantalla para apuntar compras, ventas ni dividendos (ni retenciones): hasta entonces,
+  de Caudal solo llegarán los saldos de las cuentas que enlaces. Cuando la tenga, no hay que tocar nada aquí.
+- Un traspaso a un fondo que no sale en ninguna otra operación de Caudal llega sin ISIN: hay que enlazarlo a mano.
 - Completar el bruto y las retenciones de los dividendos antiguos (o importarlos de BD_DIV del Excel).
 - Previsión de cobros de los próximos 12 meses usando el calendario de Yahoo que ya baja el nivel 1.
 - Checklist de lo reclamable por país (formulario, plazo, si ya lo pediste).
@@ -305,7 +355,10 @@ del autor lleva `[mod]` (necesita git y el remoto «upstream»; si no, se salta)
 - Control de gastos (pensar antes de programar). Iría como mod nuevo (ver «Para añadir un mod nuevo»).
 
 ## Notas
-- mis_datos/ no se toca ni se sube a GitHub.
+- mis_datos/ no se toca ni se sube a GitHub. Dentro, además de lo del autor:
+  - `cache/` (lo que bajan mis mods de internet),
+  - `caudal.json` (configuración del mod de Caudal, **con el token**) y
+  - `caudal/` (la foto de Caudal de cada perfil: `caudal/principal.json`). Se puede borrar: se rehace al sincronizar.
 - En `mis_datos/cache/` sobran los `EMPRESA_MS_*.json` (intento con Morningstar) y los
   `EMPRESA_QS_*.json` (intento con la ficha completa de Yahoo): ya no se usan y se pueden borrar.
 - Después de cambiar archivos de la app (o de traer una actualización del autor), cerrar la

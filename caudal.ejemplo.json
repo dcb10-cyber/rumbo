@@ -1,0 +1,8 @@
+{
+ "_ayuda": "Plantilla del mod de Caudal. Cópiala como mis_datos/caudal.json, pega en «token» el mismo texto que CAUDAL_TOKEN_LECTURA del .env de Caudal y pon «activo»: true. «perfil»: el perfil de Rumbo que se sincroniza. «desde»: solo entran las operaciones de Caudal con esa fecha o posterior (lo anterior se queda como lo tengas en Rumbo).",
+ "activo": false,
+ "url": "http://127.0.0.1:8000",
+ "token": "PEGA_AQUI_TU_TOKEN",
+ "perfil": "principal",
+ "desde": "2026-12-01"
+}
