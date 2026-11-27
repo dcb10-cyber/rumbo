@@ -11,6 +11,11 @@ fondos, avisos de la regla de los dos meses...), pero de todos los años a la ve
 IRPF los necesita para arrastrar las pérdidas de un año a los cuatro siguientes. Las
 cuentas del impuesto (compensación, base del ahorro, escala) se hacen en el navegador
 (web/mods/pestana_irpf.js), junto con los dividendos y sus retenciones.
+
+Opciones (si las da Caudal): "opciones": {disponible, criterio, aviso, porAno: {año: {resultados,
+ganancias, perdidas, saldo, saldoOtro, csv}}}. Son ganancias y pérdidas patrimoniales de la base del
+ahorro: la pestaña las suma con las ventas (y entran en la compensación del 25 % y en el arrastre de
+4 años). Los años que solo tienen opciones también salen en «anos».
 """
 
 
@@ -26,6 +31,15 @@ def ventas_por_ano(cfg):
     return anos, por_ano
 
 
+def opciones_irpf():
+    """Las opciones de Caudal por año (vacío si no hay o si algo falla: el IRPF sigue como siempre)."""
+    try:
+        from .caudal import opciones
+        return opciones.resumen_irpf()
+    except Exception:
+        return {"disponible": False, "criterio": None, "aviso": None, "porAno": {}}
+
+
 def registra(app, cartera, carpeta_cache):
     from flask import jsonify
 
@@ -36,7 +50,9 @@ def registra(app, cartera, carpeta_cache):
         try:
             with servidor.cerrojo:   # el motor no admite dos cálculos a la vez
                 anos, por_ano = ventas_por_ano(cartera())
-            return jsonify(ok=True, anos=anos, porAno=por_ano)
+            opc = opciones_irpf()
+            anos = sorted(set(anos) | set(opc["porAno"]), reverse=True) if opc["porAno"] else anos
+            return jsonify(ok=True, anos=anos, porAno=por_ano, opciones=opc)
         except Exception as e:
             return jsonify(ok=False, error=str(e), anos=[], porAno={}), 200
 

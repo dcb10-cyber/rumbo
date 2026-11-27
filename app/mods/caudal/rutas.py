@@ -29,7 +29,7 @@ import os
 import re
 import threading
 
-from . import capa, cliente, traductor
+from . import capa, cliente, opciones, traductor
 
 _SYNC = threading.Lock()   # una sola sincronización a la vez
 _ULTIMO = {}               # perfil -> resultado de la última vez que se preguntó a Caudal (en memoria)
@@ -98,6 +98,13 @@ def _foto_vacia(cfgc, enlaces):
             "enlazados": [], "pendientes": [], "avisos": [], "conciliacion": [], "movimientos": [], "valoraciones": []}
 
 
+def _normaliza(manuales):
+    """Los enlaces a mano: activo → producto, cuenta → producto y, en «opciones», el producto deuda del pasivo."""
+    manuales = manuales or {}
+    return {"activo": dict(manuales.get("activo") or {}), "cuenta": dict(manuales.get("cuenta") or {}),
+            "opciones": dict(manuales.get("opciones") or {})}
+
+
 def _recalcula_si_toca(perfil):
     s = _servidor()
     activo = s.perfiles()["activo"]
@@ -118,9 +125,15 @@ def _procesa(cfgc, crudo, foto, manuales=None):
                           f"El perfil «{perfil}» todavía no tiene cartera propia en Rumbo."}])
     if manuales is None:
         manuales = copy.deepcopy((foto or {}).get("enlaces") or {})
-    manuales = {"activo": dict(manuales.get("activo") or {}), "cuenta": dict(manuales.get("cuenta") or {})}
+    manuales = _normaliza(manuales)
     plano = _plano(crudo)
     t = traductor.traduce(plano, base, manuales, cfgc["desde"])
+    # Opciones (nunca bloquean): el pasivo de las cortas abiertas, como valores del producto deuda enlazado.
+    opc = crudo.get("opciones") or {}
+    vals_pasivo, avisos_pasivo = opciones.valoraciones_pasivo(opc, manuales["opciones"].get("pasivo"), t["cartera"],
+                                                             cfgc["desde"])
+    t["valoraciones"] = t["valoraciones"] + vals_pasivo
+    t["avisos"] = t["avisos"] + avisos_pasivo + ([opc["aviso"]] if opc.get("aviso") else [])
     if t["errores"]:
         _PENDIENTE[perfil] = {"crudo": crudo}
         avisos = ["No se ha guardado nada nuevo de Caudal: hay operaciones que Rumbo no acepta (abajo). "
@@ -137,7 +150,8 @@ def _procesa(cfgc, crudo, foto, manuales=None):
         "antesDeDesde": t["antesDeDesde"], "movimientos": t["movimientos"], "valoraciones": t["valoraciones"],
     }
     viejo = foto or {}
-    cambiado = (viejo.get("movimientos"), viejo.get("valoraciones")) != (nueva["movimientos"], nueva["valoraciones"])
+    cambiado = (viejo.get("movimientos"), viejo.get("valoraciones")) != (nueva["movimientos"], nueva["valoraciones"]) \
+        or ((viejo.get("crudo") or {}).get("opciones") or {}).get("rutas") != opc.get("rutas")
     capa.guarda_foto(perfil, nueva)
     _PENDIENTE.pop(perfil, None)
     avisos = list(nueva["avisos"]) + [f"Las unidades de «{c['nombre']}» no cuadran: Rumbo {c['rumbo']:g}, Caudal "
@@ -184,11 +198,14 @@ def sincroniza():
             r = _resultado(foto, ok=False, errores=[{"fecha": None, "activo": "—", "motivo": p} for p in problemas])
             _ULTIMO[perfil] = r
             return r
-        sin_cambios = all(estado == 304 for estado, _, _ in respuestas.values())
+        # Opciones: después de lo de siempre, con el mismo token y ETag. Nunca bloquean lo anterior.
+        crudo["opciones"], _avisos_opc, cambio_opc = opciones.sincroniza(cfgc, crudo_viejo.get("opciones"))
+        sin_cambios = all(estado == 304 for estado, _, _ in respuestas.values()) and not cambio_opc
         with s.cerrojo:
             _, huella = _lee_cartera(perfil)
             if sin_cambios and foto and foto.get("desde") == cfgc["desde"] and foto.get("huellaCartera") == huella:
                 r = _resultado(foto)   # nada nuevo en Caudal ni en tu cartera: respuesta rápida
+                r["avisos"] += [a for a in _avisos_opc if a not in r["avisos"]]
                 _ULTIMO[perfil] = r
                 return r
             r = _procesa(cfgc, crudo, foto)
@@ -206,7 +223,8 @@ def enlaza(datos):
         return {"ok": False, "errores": ["La sincronización con Caudal está desactivada."]}, 400
     clase, cid = datos.get("clase"), str(datos.get("caudal_id") or "")
     producto = str(datos.get("producto") or "")
-    if clase not in ("activo", "cuenta") or not _ID_OK.fullmatch(cid) or (producto and not _ID_OK.fullmatch(producto)):
+    if clase not in ("activo", "cuenta", "opciones") or not _ID_OK.fullmatch(cid) \
+            or (producto and not _ID_OK.fullmatch(producto)) or (clase == "opciones" and cid != "pasivo"):
         return {"ok": False, "errores": ["Petición no válida."]}, 400
     perfil = cfgc["perfil"]
     with s.cerrojo:
@@ -223,9 +241,11 @@ def enlaza(datos):
                                                  "«Cuenta / efectivo» o «Deuda / préstamo»."]}, 400
             if clase == "activo" and solo_saldo:
                 return {"ok": False, "errores": ["Un activo de Caudal no se puede enlazar con una cuenta o una deuda."]}, 400
+            if clase == "opciones" and p.get("tipo") != "deuda":
+                return {"ok": False, "errores": ["Las opciones vendidas abiertas solo se enlazan con un producto de tipo "
+                                                 "«Deuda / préstamo»."]}, 400
         foto = capa.lee_foto(perfil)
-        manuales = copy.deepcopy((foto or {}).get("enlaces") or {})
-        manuales = {"activo": dict(manuales.get("activo") or {}), "cuenta": dict(manuales.get("cuenta") or {})}
+        manuales = _normaliza(copy.deepcopy((foto or {}).get("enlaces") or {}))
         if producto:
             manuales[clase][cid] = producto
         else:
@@ -269,6 +289,7 @@ def estado():
         "enlazados": foto.get("enlazados") or [], "conciliacion": foto.get("conciliacion") or [],
         "movimientos": len(foto.get("movimientos") or []), "valoraciones": len(foto.get("valoraciones") or []),
         "antesDeDesde": foto.get("antesDeDesde") or 0, "productos": productos,
+        "opciones": opciones.estado(foto, foto.get("enlaces")),
     }
 
 
@@ -403,6 +424,7 @@ def registra(app):
     app.add_url_rule("/api/caudal-mod/estado", endpoint="api_caudal_mod_estado", view_func=r_estado, methods=["GET"])
     app.add_url_rule("/api/caudal-mod/enlazar", endpoint="api_caudal_mod_enlazar", view_func=r_enlazar,
                      methods=["POST"])
+    opciones.registra(app)   # /api/caudal-mod/opciones (pestaña «Opciones»)
     # Va detrás de la seguridad del autor (registrada antes): lo de otra web sigue dando 403.
     app.before_request(portero)
     app.after_request(pone_capa_en_respuesta)

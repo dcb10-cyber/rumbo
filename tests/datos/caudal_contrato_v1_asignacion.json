@@ -1,0 +1,134 @@
+{
+ "_nota": "Datos INVENTADOS. Operaciones del contrato v1 con asignaciones y un ejercicio de opciones (criterio DGT). Copia idéntica en Rumbo.",
+ "operaciones": {
+  "schema": 1,
+  "version": "5e1d7d3d2340d200dc5d8ab832dc624d",
+  "operaciones": [
+   {
+    "id": "2",
+    "tipo": "compra",
+    "fecha": "2026-01-16",
+    "activo": {
+     "id": 1,
+     "isin": "US0378331005",
+     "ticker": "AAPL",
+     "nombre": "Apple Inc.",
+     "tipo": "accion",
+     "divisa": "USD"
+    },
+    "cuenta_id": 1,
+    "unidades": 100.0,
+    "bruto_eur": 14000.0,
+    "comision_eur": 0.0,
+    "neto_eur": 14000.0,
+    "ret_origen_eur": null,
+    "ret_es_eur": null,
+    "pais": null,
+    "convenio_pct": null,
+    "destino_activo_id": null,
+    "unidades_destino": null,
+    "nota": null
+   },
+   {
+    "id": "4",
+    "tipo": "venta",
+    "fecha": "2026-02-20",
+    "activo": {
+     "id": 1,
+     "isin": "US0378331005",
+     "ticker": "AAPL",
+     "nombre": "Apple Inc.",
+     "tipo": "accion",
+     "divisa": "USD"
+    },
+    "cuenta_id": 1,
+    "unidades": 100.0,
+    "bruto_eur": 16000.0,
+    "comision_eur": 0.0,
+    "neto_eur": 16000.0,
+    "ret_origen_eur": null,
+    "ret_es_eur": null,
+    "pais": null,
+    "convenio_pct": null,
+    "destino_activo_id": null,
+    "unidades_destino": null,
+    "nota": null
+   },
+   {
+    "id": "12",
+    "tipo": "compra",
+    "fecha": "2026-05-15",
+    "activo": {
+     "id": 1,
+     "isin": "US0378331005",
+     "ticker": "AAPL",
+     "nombre": "Apple Inc.",
+     "tipo": "accion",
+     "divisa": "USD"
+    },
+    "cuenta_id": 1,
+    "unidades": 100.0,
+    "bruto_eur": 16500.0,
+    "comision_eur": 0.0,
+    "neto_eur": 16500.0,
+    "ret_origen_eur": null,
+    "ret_es_eur": null,
+    "pais": null,
+    "convenio_pct": null,
+    "destino_activo_id": null,
+    "unidades_destino": null,
+    "nota": null
+   }
+  ]
+ },
+ "posiciones": {
+  "schema": 1,
+  "version": "c9f2b582a0324e7bc3f18126dfb89f99",
+  "posiciones": [
+   {
+    "activo_id": 1,
+    "unidades": 100.0
+   },
+   {
+    "activo_id": 4,
+    "unidades": 0.0
+   },
+   {
+    "activo_id": 5,
+    "unidades": 0.0
+   },
+   {
+    "activo_id": 6,
+    "unidades": 0.0
+   },
+   {
+    "activo_id": 7,
+    "unidades": 0.0
+   },
+   {
+    "activo_id": 8,
+    "unidades": 0.0
+   },
+   {
+    "activo_id": 9,
+    "unidades": 0.0
+   },
+   {
+    "activo_id": 10,
+    "unidades": 0.0
+   },
+   {
+    "activo_id": 11,
+    "unidades": -1.0
+   },
+   {
+    "activo_id": 12,
+    "unidades": -1.0
+   },
+   {
+    "activo_id": 13,
+    "unidades": 1.0
+   }
+  ]
+ }
+}

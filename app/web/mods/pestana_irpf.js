@@ -64,9 +64,10 @@
         .then(r => (r.ok ? r.json() : null))
         .then(j => {
           if (!j || !j.ok) ventas.error = (j && j.error) || "No he podido calcular tus ventas.";
-          ventas.datos = { anos: (j && j.anos) || [], porAno: (j && j.porAno) || {} };
+          ventas.datos = { anos: (j && j.anos) || [], porAno: (j && j.porAno) || {},
+                           opciones: (j && j.opciones) || { porAno: {} } };
         })
-        .catch(() => { ventas.error = "No he podido calcular tus ventas."; ventas.datos = { anos: [], porAno: {} }; });
+        .catch(() => { ventas.error = "No he podido calcular tus ventas."; ventas.datos = { anos: [], porAno: {}, opciones: { porAno: {} } }; });
     }
     return ventas.promesa;
   };
@@ -228,16 +229,20 @@
     if (!estado.ano || !anos.includes(estado.ano)) estado.ano = hoy.slice(0, 4);
     const ano = estado.ano;
 
+    // Opciones de Caudal (resultado con el criterio que manda Caudal): ganancias y pérdidas
+    // patrimoniales, como las ventas.
+    const O = (ventas.datos.opciones && ventas.datos.opciones.porAno) || {};
     const datosAno = Y => {
       const delA = cobros.filter(c => c.fecha.startsWith(Y));
       const con = delA.filter(c => c.conFis), sin = delA.filter(c => !c.conFis);
       const v = V[Y] || { ventas: [], rescates: [], comisiones: [], totales: {}, avisos: [], csv: "" };
+      const op = O[Y] || { resultados: [], ganancias: 0, perdidas: 0, saldo: 0, saldoOtro: 0, csv: "" };
       return {
-        con, sin, v,
+        con, sin, v, op,
         rcmBruto: sum(con.map(c => c.fiscal.bruto)),
         gastos: sum((v.comisiones || []).map(x => x.importe)),
-        ganancias: (v.totales && v.totales.ganancias) || 0,
-        perdidas: (v.totales && v.totales.perdidas) || 0,
+        ganancias: ((v.totales && v.totales.ganancias) || 0) + op.ganancias,
+        perdidas: ((v.totales && v.totales.perdidas) || 0) + op.perdidas,
       };
     };
     const L = liquida(anos, datosAno);
@@ -254,6 +259,10 @@
       <section class="tarjeta" id="imodVentas">
         <header><h2>Ganancias y pérdidas por ventas</h2><span class="subt">Acciones, ETF, fondos, cripto… con FIFO, como Hacienda</span></header>
         <div id="imodVentasCuerpo"></div>
+      </section>
+      <section class="tarjeta" id="imodOpciones" hidden>
+        <header><h2>Opciones (de Caudal)</h2><span class="subt" id="imodOpcNota"></span></header>
+        <div id="imodOpcCuerpo"></div>
       </section>
       <section class="tarjeta" id="imodPais">
         <header><h2>Dividendos e intereses: retenciones</h2><span class="subt">Lo que te retienen fuera y qué pasa con ello</span></header>
@@ -293,7 +302,8 @@
 
     pintaResumen(l, ano, +hoy.slice(0, 4));
     pintaLiquidacion(l, ano);
-    pintaVentas(l.d.v, ano);
+    pintaVentas(l.d.v, ano, l.d.op);
+    pintaOpciones(l.d.op, ano, ventas.datos.opciones || {});
     pintaPais(l);
     pintaCobros(l, ano);
     pintaSin(l.d.sin, ano);
@@ -302,7 +312,7 @@
 
   /* ---------------------------------------------- resumen del año */
   function pintaResumen(l, ano, anoHoy) {
-    const hay = l.base > 0.005 || l.d.con.length || l.d.v.ventas.length || l.pendientes.length;
+    const hay = l.base > 0.005 || l.d.con.length || l.d.v.ventas.length || l.d.op.resultados.length || l.pendientes.length;
     if (!hay) {
       $("#imodResumen").innerHTML = `<section class="tarjeta" style="margin-top:18px"><p class="imodVacio">En ${ano} no hay
         ventas ni cobros con el bruto y las retenciones anotados.${l.d.sin.length ? ` Tienes ${l.d.sin.length} cobros sin
@@ -334,8 +344,11 @@
     h += fila("Dividendos, intereses y cupones (bruto)", G.fmtEur(l.rcmBruto), "", `${l.d.con.length} cobros con el bruto anotado`);
     if (l.gastos) h += fila("Gastos de custodia y administración", menos(l.gastos), "hijo", "las comisiones que anotaste aparte de compras y ventas");
     h += fila("Rendimientos del capital mobiliario", signo(l.saldoRCM), "sub");
-    h += fila("Ganancias por ventas", G.fmtEur(l.ganancias), "", `${nVentas(l.d.v.ventas.filter(v => v.ganancia > 0).length)} con ganancia`);
-    h += fila("Pérdidas por ventas", l.perdidas ? signo(l.perdidas) : "—", "", `${nVentas(l.d.v.ventas.filter(v => v.ganancia < 0).length)} con pérdida`);
+    const op = l.d.op, conOp = op.resultados.length > 0;
+    h += fila(conOp ? "Ganancias por ventas y opciones" : "Ganancias por ventas", G.fmtEur(l.ganancias), "",
+      `${nVentas(l.d.v.ventas.filter(v => v.ganancia > 0).length)} con ganancia${conOp ? ` + ${G.fmtEur(op.ganancias)} de opciones` : ""}`);
+    h += fila(conOp ? "Pérdidas por ventas y opciones" : "Pérdidas por ventas", l.perdidas ? signo(l.perdidas) : "—", "",
+      `${nVentas(l.d.v.ventas.filter(v => v.ganancia < 0).length)} con pérdida${conOp && op.perdidas ? ` + ${G.fmtEur(-op.perdidas)} de opciones` : ""}`);
     h += fila("Ganancias y pérdidas patrimoniales", signo(l.saldoGP), "sub");
     if (l.compAno > 0.005) h += fila("Pérdidas de este año compensadas con dividendos e intereses", menos(l.compAno), "hijo",
       `como mucho el 25 % de los rendimientos (${G.fmtEur(0.25 * Math.max(0, l.saldoRCM))})`);
@@ -359,7 +372,44 @@
   }
 
   /* ---------------------------------------------- ventas (lo de «Para la Renta» del autor) */
-  function pintaVentas(v, ano) {
+  /* ---------------------------------------------- opciones (de Caudal) */
+  const NOMBRE_OP = { btc: "Recompra", stc: "Venta para cerrar", vencida: "Vencida", asignada: "Asignada", ejercida: "Ejercida" };
+  function pintaOpciones(op, ano, info) {
+    const sec = $("#imodOpciones");
+    if (!op.resultados.length && !info.aviso) return;
+    sec.hidden = false;
+    const crit = info.criterio === "broker" ? "lo que da el bróker" : "el criterio DGT";
+    const otro = info.criterio === "broker" ? "el criterio DGT" : "el del bróker";
+    $("#imodOpcNota").textContent = op.resultados.length
+      ? `${op.resultados.length} cierres, vencimientos o asignaciones en ${ano}, con ${crit} (se elige en Ajustes de Caudal)` : "";
+    let h = info.aviso ? `<div class="av"><span>ⓘ</span><span>${escH(info.aviso)}</span></div>` : "";
+    if (op.resultados.length) {
+      h += kpisHtml([
+        { e: "Ganancias", v: G.fmtEur(op.ganancias), n: "suman con las de tus ventas" },
+        { e: "Pérdidas", v: op.perdidas ? signo(op.perdidas) : "—", n: "compensan con las de tus ventas" },
+        { e: "Saldo", v: signo(op.saldo), n: `con ${crit}` },
+      ]).replace('class="kpis"', 'class="kpis" style="margin:0 0 12px"');
+      h += `<p class="subt imodNota" style="margin:0 0 12px">Con ${otro}, este año serían <b>${G.fmtEurSigno(op.saldoOtro)}</b>
+        (el total del ciclo es el mismo: solo cambia en qué año y en qué casilla sale cada euro).</p>`;
+      h += `<div class="tablaEnv"><table class="dt"><thead><tr><th>Fecha</th><th>Contrato</th><th>Evento</th><th>Transmisión</th>
+          <th>Adquisición</th><th>Ganancia o pérdida</th></tr></thead><tbody>${op.resultados.map(r => `<tr>
+          <td>${G.fmtFecha(r.fecha)}</td><td>${escH(r.contrato || "")}<span class="fiscalRevisar">${escH(r.simbolo || "")}</span></td>
+          <td>${escH(NOMBRE_OP[r.subtipo] || r.subtipo || "")}</td><td>${G.fmtEur(r.transmision)}</td><td>${G.fmtEur(r.adquisicion)}</td>
+          <td>${signo(r.resultado)}</td></tr>`).join("")}</tbody></table></div>
+        <p class="subt imodNota">Van con las ventas a «ganancias y pérdidas patrimoniales» de la base del ahorro (en la Renta,
+          «otros elementos patrimoniales»). La regla de los dos meses no se aplica a las opciones; sí a las acciones que te
+          asignan, que llegan como una compra. Se apuntan en Caudal.</p>
+        <p style="margin:12px 0 0"><a class="btn" id="imodBajarOpc">Descargar las opciones de ${ano} (CSV)</a></p>`;
+    }
+    $("#imodOpcCuerpo").innerHTML = h;
+    const bajar = $("#imodBajarOpc");
+    if (bajar) {
+      bajar.href = URL.createObjectURL(new Blob(["﻿" + op.csv], { type: "text/csv;charset=utf-8" }));
+      bajar.download = `rumbo_opciones_${ano}.csv`;
+    }
+  }
+
+  function pintaVentas(v, ano, op) {
     const cont = $("#imodVentasCuerpo");
     const t = v.totales || {};
     const nv = v.ventas.length;
@@ -403,11 +453,13 @@
     }
     const avisos = (v.avisos || []).filter(a => !/^Dividendos, cupones e intereses: van como los anotaste/.test(a));
     h += avisos.map(a => `<div class="av" style="margin-top:12px"><span>⚠</span><span>${escH(a)}</span></div>`).join("");
-    if (v.csv) h += `<p style="margin:16px 0 0"><a class="btn" id="imodBajar">Descargar el resumen de ${ano} en Excel (CSV)</a></p>`;
+    // El CSV de la Renta lleva también las opciones de Caudal (debajo, con su propia cabecera).
+    const csv = (v.csv || "") + (op && op.csv ? (v.csv ? "\r\n" : "") + op.csv : "");
+    if (csv) h += `<p style="margin:16px 0 0"><a class="btn" id="imodBajar">Descargar el resumen de ${ano} en Excel (CSV)</a></p>`;
     cont.innerHTML = h;
     const bajar = $("#imodBajar");
     if (bajar) {
-      bajar.href = URL.createObjectURL(new Blob(["﻿" + v.csv], { type: "text/csv;charset=utf-8" }));
+      bajar.href = URL.createObjectURL(new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" }));
       bajar.download = `rumbo_renta_${ano}.csv`;
     }
   }
@@ -503,7 +555,7 @@
   /* ---------------------------------------------- año a año */
   function pintaAnos(L, anos) {
     const filas = anos.slice().reverse().map(a => ({ a, l: L[a] }))
-      .filter(({ l }) => l.d.con.length || l.d.sin.length || l.d.v.ventas.length || l.pendientes.length);
+      .filter(({ l }) => l.d.con.length || l.d.sin.length || l.d.v.ventas.length || l.d.op.resultados.length || l.pendientes.length);
     const e = v => (Math.abs(v) > 0.005 ? G.fmtEur(v) : "—");
     $("#imodTablaAnos").innerHTML = `
       <thead><tr><th>Año</th><th title="Cobros con el bruto anotado / todos">Cobros anotados</th><th>Rend. capital</th>
@@ -512,7 +564,7 @@
       <tbody>${filas.map(({ a, l }) => {
         const pend = sum(l.pendientes.map(x => x.importe));
         return `<tr><td>${a}</td><td>${l.d.con.length} de ${l.d.con.length + l.d.sin.length}</td>
-          <td>${signo(l.saldoRCM)}</td><td>${l.d.v.ventas.length ? signo(l.saldoGP) : "—"}</td>
+          <td>${signo(l.saldoRCM)}</td><td>${l.d.v.ventas.length || l.d.op.resultados.length ? signo(l.saldoGP) : "—"}</td>
           <td>${G.fmtEur(l.base)}</td><td>${e(l.cuota)}</td><td>${e(l.deducible)}</td><td>${e(l.espana)}</td>
           <td class="${l.resultado >= 0 ? "neg" : "pos"}">${Math.abs(l.resultado) > 0.005 ? (l.resultado >= 0 ? "" : "−") + G.fmtEur(Math.abs(l.resultado)) +
             ` <small>${l.resultado >= 0 ? "a pagar" : "a devolver"}</small>` : "—"}</td>

@@ -256,6 +256,7 @@
             <td>${e.como === "a mano" ? `<button type="button" class="btn" data-quitar data-clase="${e.clase}" data-id="${escH(e.caudal_id)}">Quitar</button>` : ""}</td></tr>`).join("")}
           </tbody></table></div>` : '<p class="subt">Todavía no hay nada enlazado.</p>'}
       </section>
+      ${pasivoOpciones()}
       <section class="tarjeta"><header><h2>¿Cuadran las unidades?</h2><span class="subt">Rumbo (lo tuyo + lo de Caudal) frente a las posiciones de Caudal</span></header>
         ${(est.conciliacion || []).length ? `<div class="tablaEnv"><table class="dt"><thead><tr><th class="izq">Producto</th>
           <th>Rumbo</th><th>Caudal</th><th>Diferencia</th></tr></thead><tbody>
@@ -274,6 +275,31 @@
     panel.querySelectorAll("[data-quitar]").forEach(b => b.addEventListener("click", () => {
       if (confirm("¿Quitar este enlace? Sus operaciones de Caudal dejarán de entrar en Rumbo.")) enlaza(b.dataset.clase, b.dataset.id, "", b);
     }));
+    panel.querySelectorAll("[data-pasivo]").forEach(b => b.addEventListener("click", () => {
+      const sel = panel.querySelector("select[data-pasivo-sel]");
+      const quitar = b.dataset.pasivo === "quitar";
+      if (!quitar && !sel.value) { sel.focus(); return; }
+      enlaza("opciones", "pasivo", quitar ? "" : sel.value, b);
+    }));
+  }
+
+  // Opciones vendidas abiertas → producto de tipo deuda (a mano, como las cuentas): la prima de las
+  // cortas abiertas aún no es tuya; así resta del patrimonio en vez de inflarlo.
+  function pasivoOpciones() {
+    const op = (est && est.opciones) || {};
+    const deudas = ((est && est.productos) || []).filter(p => p.tipo === "deuda");
+    const actual = op.pasivo || "";
+    const nombre = (deudas.find(p => p.id === actual) || {}).nombre;
+    return `<section class="tarjeta"><header><h2>Opciones vendidas abiertas → producto de tipo deuda</h2>
+      <span class="subt">La prima de las opciones vendidas que siguen abiertas aún no es tuya. Enlázala con un producto «Deuda /
+        préstamo» (créalo en Mis datos) y se restará del patrimonio a cada fin de mes.</span></header>
+      ${op.disponible ? "" : `<div class="av"><span>ⓘ</span><span>${escH(op.aviso || "Todavía no hay opciones de Caudal.")}</span></div>`}
+      ${actual ? `<p>Enlazado con <b>${escH(nombre || actual)}</b>. <button type="button" class="btn" data-pasivo="quitar">Quitar</button></p>`
+        : `<span class="cmodEnlace" style="justify-content:flex-start"><select data-pasivo-sel>${deudas.length
+            ? '<option value="">Elige una deuda…</option>' + deudas.map(p => `<option value="${escH(p.id)}">${escH(p.nombre)}</option>`).join("")
+            : '<option value="">(no tienes productos de tipo deuda)</option>'}</select>
+          <button type="button" class="btn prim" data-pasivo="enlazar">Enlazar</button></span>`}
+    </section>`;
   }
 
   async function enlaza(clase, id, producto, boton) {

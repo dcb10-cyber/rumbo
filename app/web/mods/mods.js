@@ -35,6 +35,7 @@
     "pestana_dividendos.js",   // pestaña «Ingr. Pasivos» (crea su propio botón y panel)
     "pestana_irpf.js",         // pestaña «IRPF»: retenciones e impuestos de esos cobros
     "caudal.js",               // Caudal → Rumbo: pastilla, candados 🔒 y pestaña «Caudal»
+    "opciones.js",             // pestaña «Opciones» (solo lectura, lo da Caudal)
   ];
 
   /* ---------------------------------------------- utilidades comunes */

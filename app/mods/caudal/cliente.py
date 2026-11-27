@@ -35,6 +35,10 @@ class ErrorCaudal(Exception):
     """No se ha podido leer de Caudal (apagado, sin red, token malo...). No se ha tocado nada."""
 
 
+class NoExiste(ErrorCaudal):
+    """Caudal responde 404: esa ruta no existe (p. ej. un Caudal sin el módulo de opciones)."""
+
+
 class _SinRedirecciones(urllib.request.HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         return None   # una redirección se trata como un error: no se sigue
@@ -87,6 +91,8 @@ def pide(base, ruta, token, version=None):
         if e.code == 503:
             raise ErrorCaudal("Caudal no tiene token de lectura: pon CAUDAL_TOKEN_LECTURA en su .env "
                               "y reinícialo.") from None
+        if e.code == 404:
+            raise NoExiste("Caudal no tiene esa ruta (error 404).") from None
         if 300 <= e.code < 400:
             raise ErrorCaudal("Caudal ha respondido con una redirección: no la sigo (revisa la dirección).") from None
         raise ErrorCaudal(f"Caudal ha respondido con un error {e.code}.") from None

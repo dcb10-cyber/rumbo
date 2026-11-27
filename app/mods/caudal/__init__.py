@@ -12,6 +12,9 @@ completa de lo que es de Caudal: operaciones de inversión, saldos de cuentas y 
       capa.py       configuración (mis_datos/caudal.json), la foto (mis_datos/caudal/<perfil>.json)
                     y cómo se superpone al leer la cartera
       rutas.py      /api/caudal-mod/sincronizar, /estado, /enlazar y el portero
+      opciones.py   las opciones de Caudal (solo se enseñan): resultados para IRPF, abiertas,
+                    campañas y el pasivo de las cortas (valores de un producto deuda);
+                    /api/caudal-mod/opciones para la pestaña «Opciones» (web/mods/opciones.js)
 
 La parte del navegador está en app/web/mods/caudal.js. Sin mis_datos/caudal.json, o con
 "activo": false, el mod no hace nada.

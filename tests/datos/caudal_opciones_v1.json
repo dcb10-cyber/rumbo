@@ -1,0 +1,443 @@
+{
+ "_nota": "Datos INVENTADOS. Contrato de lectura de opciones de Caudal (schema 1). Copia idéntica en Rumbo.",
+ "resultados": {
+  "schema": 1,
+  "version": "81f70c7e974e3872c8d84e5198e44a60",
+  "criterio": "dgt",
+  "resultados": [
+   {
+    "id": "2",
+    "fecha": "2026-01-16",
+    "ejercicio": 2026,
+    "contrato": {
+     "id": 4,
+     "simbolo_occ": "AAPL  260116P00150000",
+     "nombre": "AAPL 150P 16/01/26",
+     "subyacente": {
+      "id": 1,
+      "isin": "US0378331005",
+      "ticker": "AAPL",
+      "nombre": "Apple Inc.",
+      "tipo": "accion",
+      "divisa": "USD"
+     },
+     "put_call": "P",
+     "strike": 150.0,
+     "vencimiento": "2026-01-16",
+     "multiplicador": 100.0,
+     "divisa": "USD"
+    },
+    "subtipo": "asignada",
+    "lado": "corta",
+    "contratos": 1.0,
+    "criterio": "dgt",
+    "transmision_eur": 248.95,
+    "adquisicion_eur": 1000.0,
+    "resultado_eur": -751.05,
+    "resultado_otro_criterio_eur": 0.0
+   },
+   {
+    "id": "4",
+    "fecha": "2026-02-20",
+    "ejercicio": 2026,
+    "contrato": {
+     "id": 5,
+     "simbolo_occ": "AAPL  260220C00155000",
+     "nombre": "AAPL 155C 20/02/26",
+     "subyacente": {
+      "id": 1,
+      "isin": "US0378331005",
+      "ticker": "AAPL",
+      "nombre": "Apple Inc.",
+      "tipo": "accion",
+      "divisa": "USD"
+     },
+     "put_call": "C",
+     "strike": 155.0,
+     "vencimiento": "2026-02-20",
+     "multiplicador": 100.0,
+     "divisa": "USD"
+    },
+    "subtipo": "asignada",
+    "lado": "corta",
+    "contratos": 1.0,
+    "criterio": "dgt",
+    "transmision_eur": 178.95,
+    "adquisicion_eur": 500.0,
+    "resultado_eur": -321.05,
+    "resultado_otro_criterio_eur": 0.0
+   },
+   {
+    "id": "6",
+    "fecha": "2026-04-17",
+    "ejercicio": 2026,
+    "contrato": {
+     "id": 6,
+     "simbolo_occ": "MSFT  260417P00380000",
+     "nombre": "MSFT 380P 17/04/26",
+     "subyacente": {
+      "id": 2,
+      "isin": "US5949181045",
+      "ticker": "MSFT",
+      "nombre": "Microsoft",
+      "tipo": "accion",
+      "divisa": "USD"
+     },
+     "put_call": "P",
+     "strike": 380.0,
+     "vencimiento": "2026-04-17",
+     "multiplicador": 100.0,
+     "divisa": "USD"
+    },
+    "subtipo": "vencida",
+    "lado": "corta",
+    "contratos": 1.0,
+    "criterio": "dgt",
+    "transmision_eur": 308.95,
+    "adquisicion_eur": 0.0,
+    "resultado_eur": 308.95,
+    "resultado_otro_criterio_eur": 308.95
+   },
+   {
+    "id": "8",
+    "fecha": "2026-04-17",
+    "ejercicio": 2026,
+    "contrato": {
+     "id": 7,
+     "simbolo_occ": "MSFT  260417P00350000",
+     "nombre": "MSFT 350P 17/04/26",
+     "subyacente": {
+      "id": 2,
+      "isin": "US5949181045",
+      "ticker": "MSFT",
+      "nombre": "Microsoft",
+      "tipo": "accion",
+      "divisa": "USD"
+     },
+     "put_call": "P",
+     "strike": 350.0,
+     "vencimiento": "2026-04-17",
+     "multiplicador": 100.0,
+     "divisa": "USD"
+    },
+    "subtipo": "vencida",
+    "lado": "larga",
+    "contratos": 1.0,
+    "criterio": "dgt",
+    "transmision_eur": 0.0,
+    "adquisicion_eur": 91.05,
+    "resultado_eur": -91.05,
+    "resultado_otro_criterio_eur": -91.05
+   },
+   {
+    "id": "10",
+    "fecha": "2026-05-04",
+    "ejercicio": 2026,
+    "contrato": {
+     "id": 8,
+     "simbolo_occ": "AAPL  260619C00170000",
+     "nombre": "AAPL 170C 19/06/26",
+     "subyacente": {
+      "id": 1,
+      "isin": "US0378331005",
+      "ticker": "AAPL",
+      "nombre": "Apple Inc.",
+      "tipo": "accion",
+      "divisa": "USD"
+     },
+     "put_call": "C",
+     "strike": 170.0,
+     "vencimiento": "2026-06-19",
+     "multiplicador": 100.0,
+     "divisa": "USD"
+    },
+    "subtipo": "stc",
+    "lado": "larga",
+    "contratos": 1.0,
+    "criterio": "dgt",
+    "transmision_eur": 618.95,
+    "adquisicion_eur": 401.05,
+    "resultado_eur": 217.9,
+    "resultado_otro_criterio_eur": 217.9
+   },
+   {
+    "id": "12",
+    "fecha": "2026-05-15",
+    "ejercicio": 2026,
+    "contrato": {
+     "id": 9,
+     "simbolo_occ": "AAPL  260515C00150000",
+     "nombre": "AAPL 150C 15/05/26",
+     "subyacente": {
+      "id": 1,
+      "isin": "US0378331005",
+      "ticker": "AAPL",
+      "nombre": "Apple Inc.",
+      "tipo": "accion",
+      "divisa": "USD"
+     },
+     "put_call": "C",
+     "strike": 150.0,
+     "vencimiento": "2026-05-15",
+     "multiplicador": 100.0,
+     "divisa": "USD"
+    },
+    "subtipo": "ejercida",
+    "lado": "larga",
+    "contratos": 1.0,
+    "criterio": "dgt",
+    "transmision_eur": 1500.0,
+    "adquisicion_eur": 301.05,
+    "resultado_eur": 1198.95,
+    "resultado_otro_criterio_eur": 0.0
+   },
+   {
+    "id": "14",
+    "fecha": "2026-10-10",
+    "ejercicio": 2026,
+    "contrato": {
+     "id": 10,
+     "simbolo_occ": "MSFT  261016P00400000",
+     "nombre": "MSFT 400P 16/10/26",
+     "subyacente": {
+      "id": 2,
+      "isin": "US5949181045",
+      "ticker": "MSFT",
+      "nombre": "Microsoft",
+      "tipo": "accion",
+      "divisa": "USD"
+     },
+     "put_call": "P",
+     "strike": 400.0,
+     "vencimiento": "2026-10-16",
+     "multiplicador": 100.0,
+     "divisa": "USD"
+    },
+    "subtipo": "btc",
+    "lado": "corta",
+    "contratos": 1.0,
+    "criterio": "dgt",
+    "transmision_eur": 398.95,
+    "adquisicion_eur": 601.05,
+    "resultado_eur": -202.1,
+    "resultado_otro_criterio_eur": -202.1
+   }
+  ]
+ },
+ "abiertas": {
+  "schema": 1,
+  "version": "7e775b9c705f424a404db04e3f871a67",
+  "fecha": "2026-11-27",
+  "abiertas": [
+   {
+    "contrato": {
+     "id": 11,
+     "simbolo_occ": "MSFT  261218P00390000",
+     "nombre": "MSFT 390P 18/12/26",
+     "subyacente": {
+      "id": 2,
+      "isin": "US5949181045",
+      "ticker": "MSFT",
+      "nombre": "Microsoft",
+      "tipo": "accion",
+      "divisa": "USD"
+     },
+     "put_call": "P",
+     "strike": 390.0,
+     "vencimiento": "2026-12-18",
+     "multiplicador": 100.0,
+     "divisa": "USD"
+    },
+    "lado": "corta",
+    "contratos": 1.0,
+    "prima_neta_eur": 718.95,
+    "dte": 21,
+    "capital_riesgo_eur": 38281.05,
+    "campana_id": 3
+   },
+   {
+    "contrato": {
+     "id": 13,
+     "simbolo_occ": "SPY   270115P00590000",
+     "nombre": "SPY 590P 15/01/27",
+     "subyacente": {
+      "id": 3,
+      "isin": null,
+      "ticker": "SPY",
+      "nombre": "SPDR S&P 500",
+      "tipo": "etf",
+      "divisa": "USD"
+     },
+     "put_call": "P",
+     "strike": 590.0,
+     "vencimiento": "2027-01-15",
+     "multiplicador": 100.0,
+     "divisa": "USD"
+    },
+    "lado": "larga",
+    "contratos": 1.0,
+    "prima_neta_eur": 351.05,
+    "dte": 49,
+    "capital_riesgo_eur": 0.0,
+    "campana_id": null
+   },
+   {
+    "contrato": {
+     "id": 12,
+     "simbolo_occ": "SPY   270115P00600000",
+     "nombre": "SPY 600P 15/01/27",
+     "subyacente": {
+      "id": 3,
+      "isin": null,
+      "ticker": "SPY",
+      "nombre": "SPDR S&P 500",
+      "tipo": "etf",
+      "divisa": "USD"
+     },
+     "put_call": "P",
+     "strike": 600.0,
+     "vencimiento": "2027-01-15",
+     "multiplicador": 100.0,
+     "divisa": "USD"
+    },
+    "lado": "corta",
+    "contratos": 1.0,
+    "prima_neta_eur": 598.95,
+    "dte": 49,
+    "capital_riesgo_eur": 752.1,
+    "campana_id": null
+   }
+  ]
+ },
+ "pasivo": {
+  "schema": 1,
+  "version": "6224e56922a6d19862cf4b4adeed503e",
+  "pasivo": [
+   {
+    "fecha": "2025-11-30",
+    "pasivo_eur": 248.95
+   },
+   {
+    "fecha": "2025-12-31",
+    "pasivo_eur": 248.95
+   },
+   {
+    "fecha": "2026-01-31",
+    "pasivo_eur": 178.95
+   },
+   {
+    "fecha": "2026-02-28",
+    "pasivo_eur": 0.0
+   },
+   {
+    "fecha": "2026-03-31",
+    "pasivo_eur": 308.95
+   },
+   {
+    "fecha": "2026-04-30",
+    "pasivo_eur": 0.0
+   },
+   {
+    "fecha": "2026-05-31",
+    "pasivo_eur": 0.0
+   },
+   {
+    "fecha": "2026-06-30",
+    "pasivo_eur": 0.0
+   },
+   {
+    "fecha": "2026-07-31",
+    "pasivo_eur": 0.0
+   },
+   {
+    "fecha": "2026-08-31",
+    "pasivo_eur": 0.0
+   },
+   {
+    "fecha": "2026-09-30",
+    "pasivo_eur": 398.95
+   },
+   {
+    "fecha": "2026-10-31",
+    "pasivo_eur": 718.95
+   },
+   {
+    "fecha": "2026-11-27",
+    "pasivo_eur": 1317.9
+   }
+  ]
+ },
+ "campanas": {
+  "schema": 1,
+  "version": "63010f6af1fde0e280eab86c033f4b9d",
+  "criterio": "dgt",
+  "campanas": [
+   {
+    "id": 1,
+    "subyacente": {
+     "id": 1,
+     "isin": "US0378331005",
+     "ticker": "AAPL",
+     "nombre": "Apple Inc.",
+     "tipo": "accion",
+     "divisa": "USD"
+    },
+    "estado": "cerrada",
+    "inicio": "2025-11-20",
+    "fin": "2026-02-20",
+    "dias": 92,
+    "pl_eur": 927.9,
+    "primas_netas_eur": 427.9,
+    "dividendos_eur": 0.0,
+    "acciones": 0.0,
+    "coste_ajustado_eur": null,
+    "coste_fiscal_eur": null,
+    "anualizada_pct": 24.54
+   },
+   {
+    "id": 2,
+    "subyacente": {
+     "id": 2,
+     "isin": "US5949181045",
+     "ticker": "MSFT",
+     "nombre": "Microsoft",
+     "tipo": "accion",
+     "divisa": "USD"
+    },
+    "estado": "cerrada",
+    "inicio": "2026-03-02",
+    "fin": "2026-04-17",
+    "dias": 46,
+    "pl_eur": 308.95,
+    "primas_netas_eur": 308.95,
+    "dividendos_eur": 0.0,
+    "acciones": 0.0,
+    "coste_ajustado_eur": null,
+    "coste_fiscal_eur": null,
+    "anualizada_pct": 6.45
+   },
+   {
+    "id": 3,
+    "subyacente": {
+     "id": 2,
+     "isin": "US5949181045",
+     "ticker": "MSFT",
+     "nombre": "Microsoft",
+     "tipo": "accion",
+     "divisa": "USD"
+    },
+    "estado": "abierta",
+    "inicio": "2026-09-01",
+    "fin": null,
+    "dias": 87,
+    "pl_eur": 516.85,
+    "primas_netas_eur": 516.85,
+    "dividendos_eur": 0.0,
+    "acciones": 0.0,
+    "coste_ajustado_eur": null,
+    "coste_fiscal_eur": null,
+    "anualizada_pct": 5.5
+   }
+  ]
+ }
+}
