@@ -1,0 +1,11 @@
+# Copia este archivo como .env y ajusta los valores.
+# El .env NO se sube a Git; este .env.example sí (sin secretos).
+
+# Ruta del archivo de la base de datos SQLite.
+CAUDAL_DB_PATH=caudal.db
+# Conexión con Rumbo (debe estar abierto con Iniciar.bat)
+RUMBO_URL=http://127.0.0.1:8765
+RUMBO_LLAVE=LuQQLIVKsFtEo_7dwEMWEkPuxx6RZ7VpZv_HVC1XBpw
+
+# Token de SOLO LECTURA para Rumbo (mismo texto que "token" en rumbo_mod/mis_datos/caudal.json)
+CAUDAL_TOKEN_LECTURA=7zVl-jayyE4L3_X0WtRgsk1OjXl_SEHoMKJWePkgFqo
