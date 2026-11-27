@@ -26,6 +26,7 @@ app/mods/                      ← lo mío, parte del servidor (Python)
     traductor.py                   operaciones de Caudal → movimientos de Rumbo, enlaces y validación todo o nada
     capa.py                        mis_datos/caudal.json, la foto (mis_datos/caudal/<perfil>.json) y la capa
     rutas.py                       /api/caudal-mod/sincronizar, /estado, /enlazar y el portero (409)
+    opciones.py                    opciones de Caudal (solo se enseñan): IRPF, pasivo y /api/caudal-mod/opciones
 app/web/mods/                  ← lo mío, parte del navegador (JavaScript)
   mods.js                        núcleo: carga los demás y reparte las llamadas de app.js
   empresa/
@@ -37,11 +38,15 @@ app/web/mods/                  ← lo mío, parte del navegador (JavaScript)
   pestana_dividendos.js          pestaña «Ingr. Pasivos» (crea su botón y su panel)
   pestana_irpf.js                pestaña «IRPF»: retenciones e impuestos
   caudal.js                      pastilla «Caudal ✓», candados 🔒 en Mis datos y pestaña «Caudal» (enlaces)
+  opciones.js                    pestaña «Opciones» (solo lectura: abiertas, calendario, campañas, resultados)
 tests/test_mods_empresa.py     ← mis pruebas (sin internet)
 tests/test_mods_dividendos.py
 tests/test_mods_irpf.py
 tests/test_mods_caudal.py        (Caudal simulado con el contrato: nunca sale a la red)
+tests/test_mods_caudal_opciones.py   (opciones: 404, IRPF, pasivo, asignación y regla de los dos meses)
 tests/datos/caudal_contrato_v1.json   contrato con Caudal (datos inventados; copia idéntica del de Caudal)
+tests/datos/caudal_opciones_v1.json   lectura de opciones de Caudal (datos inventados; copia idéntica)
+tests/datos/caudal_contrato_v1_asignacion.json   operaciones v1 con asignaciones (datos inventados; copia idéntica)
 caudal.ejemplo.json            ← plantilla de mis_datos/caudal.json (sin token real)
 ```
 
@@ -82,7 +87,9 @@ siempre basta con quedarse con las dos partes (lo del autor y la línea `[mod]`)
 La prueba `test_lo_tocado_del_autor_lleva_mod` comprueba que toda línea añadida en un archivo
 del autor lleva `[mod]` (necesita git y el remoto «upstream»; si no, se salta). Los dos JSON del mod de
 Caudal (`tests/datos/caudal_contrato_v1.json` y `caudal.ejemplo.json`) están en su lista de archivos míos,
-porque en un JSON no se pueden poner comentarios.
+porque en un JSON no se pueden poner comentarios (y desde el 27/11 también `caudal_opciones_v1.json` y
+`caudal_contrato_v1_asignacion.json`). Las opciones **no han añadido ninguna línea `[mod]`**: todo va en
+`app/mods/` y `app/web/mods/`.
 
 ## Hecho
 - **22/11/2026 · Color negro en la paleta de productos** (color nº 13).
@@ -351,9 +358,33 @@ porque en un JSON no se pueden poner comentarios.
     nunca se suba nada de ahí. El 27/11 se subió por error `Claude outputs/env` con claves: hay que borrarlo y cambiar las claves
     cambiadas (llave de Rumbo en `mis_datos/.acceso` y token de Caudal).
 
+- **27/11/2026 · Opciones de Caudal** (`app/mods/caudal/opciones.py`, `web/mods/opciones.js`, IRPF y pestaña Caudal).
+  - Rumbo **no entiende de opciones**: solo enseña lo que manda Caudal. Las opciones se apuntan (o importan) en Caudal.
+  - **Sincronizar**: después de lo de siempre (que no cambia), se piden las 4 rutas `/api/v1/opciones/lectura/*`
+    (resultados, abiertas, pasivo y campañas) con el mismo token y ETag, se validan y se guardan en la foto
+    (`crudo.opciones`). Si fallan o tienen otro formato, se queda lo anterior y se avisa. Si Caudal responde 404
+    (sin módulo de opciones), todo sigue como antes con el aviso «Caudal sin módulo de opciones». **Nunca bloquean**
+    la parte schema 1 (la validación todo o nada de las operaciones sigue igual).
+  - **Acciones asignadas**: llegan solas por `/inversion/operaciones` como compra o venta normal, al valor fiscal del
+    criterio de Caudal (DGT: valor de mercado; bróker: strike ∓ prima), nunca al strike a secas. No ha hecho falta
+    tocar el traductor. Comprobado: su coste en Rumbo es el de Caudal y sale el aviso de la regla de los dos meses si
+    vendiste con pérdida y te asignan dentro de ±2 meses.
+  - **Pasivo**: en la pestaña «Caudal», «Opciones vendidas abiertas → producto de tipo deuda» (a mano, como las
+    cuentas). Con el enlace, la prima de las cortas abiertas a cada fin de mes y hoy son valores de esa deuda
+    (`cvop_<fecha>`, origen caudal) y **restan del patrimonio** (Rumbo resta las deudas). Sin enlace, nada cambia.
+  - **IRPF**: por año, bloque «Opciones (de Caudal)» con los resultados del criterio que manda Caudal. Suman en
+    ganancias y pérdidas patrimoniales (con las ventas), entran en la compensación del 25 % y en el arrastre de 4
+    años, y salen en el CSV. Línea «Con el otro criterio, este año serían X €». Los años con solo opciones salen.
+  - **Pestaña «Opciones»** (después de «Caudal», solo con la sincronización activa): abiertas con DTE (avisos a 21 y
+    7 días), calendario por semanas, campañas y resultados por año. Sin formularios: «Se apuntan en Caudal».
+  - `cliente.py`: un 404 es ahora `NoExiste` (para distinguir «Caudal sin módulo» de un error de verdad).
+  - Pruebas: 8 nuevas (`tests/test_mods_caudal_opciones.py`), entre ellas que la demo pasada por Caudal sin
+    opciones da **el mismo panel y la misma Renta**. Total: 364 OK. Prueba de punta a punta con las dos apps
+    arrancadas, datos inventados y sin internet: todo cuadra (ver AVANCES.md de Caudal, Paso 7).
+
 ## Pendiente (ideas)
-- Caudal todavía no tiene pantalla para apuntar compras, ventas ni dividendos (ni retenciones): hasta entonces,
-  de Caudal solo llegarán los saldos de las cuentas que enlaces. Cuando la tenga, no hay que tocar nada aquí.
+- Opciones: el pasivo va a coste; cuando Caudal tenga precios de IBKR, irá a mercado (no hay que tocar nada aquí).
+- Opciones: la pestaña es de solo lectura a propósito; si algún día hiciera falta, un gráfico de resultados por mes.
 - Un traspaso a un fondo que no sale en ninguna otra operación de Caudal llega sin ISIN: hay que enlazarlo a mano.
 - Completar el bruto y las retenciones de los dividendos antiguos (o importarlos de BD_DIV del Excel).
 - Previsión de cobros de los próximos 12 meses usando el calendario de Yahoo que ya baja el nivel 1.
